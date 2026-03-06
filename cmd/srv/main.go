@@ -8,8 +8,11 @@ import (
 )
 
 func main() {
+	repo := memory.NewMemory()
 
-	repo := handlers.NewProductHandler(memory.NewMemory())
-	srv := http.NewServer(http.NewHandlers(repo))
+	productService := service.NewProductService(repo)
+	productHandler := handlers.NewProductHandler(productService)
+	router := http.SetupRoutes(productHandler)
+	srv := http.NewServer(router)
 	srv.Start()
 }

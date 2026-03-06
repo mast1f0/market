@@ -3,21 +3,23 @@ package http
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type Server struct {
-	handlers *Handlers
+	router http.Handler
 }
 
-func NewServer(handlers *Handlers) *Server {
+func NewServer(router *chi.Mux) *Server {
 	return &Server{
-		handlers: handlers,
+		router: router,
 	}
 }
 
 func (srv *Server) Start() {
 	fmt.Println("Server is listening on http://localhost:8080")
-	err := http.ListenAndServe(":8080", srv.handlers.Router)
+	err := http.ListenAndServe(":8080", srv.router)
 	if err != nil {
 		return
 	}
