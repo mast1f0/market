@@ -60,7 +60,7 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var product *domain.Product
-	product, err = h.service.GetProductById(id)
+	product = h.service.GetProductById(id)
 	if err != nil {
 		fmt.Println(err)
 		w.WriteHeader(http.StatusBadRequest)

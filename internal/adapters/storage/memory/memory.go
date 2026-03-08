@@ -1,3 +1,5 @@
+//for tests, fixed later
+
 package memory
 
 import (
@@ -69,9 +71,9 @@ func (m *Memory) DeleteCategoryById(categoryId int) error {
 	return errors.New("category not found")
 }
 
-func (m *Memory) CategoryByName(name string) (*domain.Category, error) {
+func (m *Memory) CategoryById(id int) (*domain.Category, error) {
 	for _, category := range m.categories {
-		if category.Name == name {
+		if category.ID == id {
 			return &category, nil
 		}
 	}
@@ -81,4 +83,8 @@ func (m *Memory) CategoryByName(name string) (*domain.Category, error) {
 func (m *Memory) AddToCategory(category *domain.Category, productId int) (*domain.Category, error) {
 	category.ProductId = append(category.ProductId, productId)
 	return category, nil
+}
+
+func (m *Memory) GetAll() []domain.Category {
+	return m.categories
 }

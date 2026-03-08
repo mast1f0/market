@@ -5,9 +5,9 @@ import (
 )
 
 type ProductRepository interface {
-	GetAllProducts() []domain.Product
-	GetProductById(productId int) (*domain.Product, error)
-	AddProduct(product *domain.Product) (*domain.Product, error)
-	DeleteProductById(productId int) error
+	GetProducts() []domain.Product
+	GetProduct(id int) *domain.Product
+	DeleteProduct(id int) error
+	CreateProduct(product *domain.Product) (*domain.Product, error)
 	UpdateProduct(product *domain.Product) (*domain.Product, error)
 }
