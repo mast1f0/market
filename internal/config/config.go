@@ -1,23 +1,24 @@
 package config
 
-import "github.com/spf13/viper"
+import (
+	"fmt"
+
+	"github.com/spf13/viper"
+)
 
 type Config struct {
-	Database struct {
-		DB_HOST     string
-		DB_PORT     int
-		DB_USER     string
-		DB_PASSWORD string
-		DB_NAME     string
-	}
+	DB_HOST     string
+	DB_PORT     int
+	DB_USER     string
+	DB_PASSWORD string
+	DB_NAME     string
 }
 
 func LoadConfig() (*Config, error) {
 	var config Config
 	viper.SetConfigName(".env")
 	viper.SetConfigType("env")
-	viper.AddConfigPath("/home/mast1f0/market/configs/") // потом убрать
-
+	viper.AddConfigPath("/home/mast1f0/market/configs") // потом убрать
 	err := viper.ReadInConfig()
 	if err != nil {
 		return nil, err
@@ -26,5 +27,6 @@ func LoadConfig() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("%+v\n", config)
 	return &config, nil
 }

@@ -20,9 +20,9 @@ func NewStorage() *Storage {
 	}
 	dsn := fmt.Sprintf(
 		"postgres://%s:%s@%s:%d/%s?sslmode=disable",
-		cfg.Database.DB_USER, cfg.Database.DB_PASSWORD,
-		cfg.Database.DB_HOST, cfg.Database.DB_PORT,
-		cfg.Database.DB_NAME,
+		cfg.DB_USER, cfg.DB_PASSWORD,
+		cfg.DB_HOST, cfg.DB_PORT,
+		cfg.DB_NAME,
 	)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {

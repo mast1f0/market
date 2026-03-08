@@ -1,0 +1,14 @@
+CREATE TABLE products (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    price NUMERIC(10,2) NOT NULL,
+    category_id INT,
+    stock INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_category
+        FOREIGN KEY(category_id)
+        REFERENCES categories(id)
+        ON DELETE SET NULL
+);

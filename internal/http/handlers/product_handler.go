@@ -59,7 +59,7 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("invalid id"))
 		return
 	}
-	var product *domain.Product
+	var product = &domain.Product{ID: id}
 	product = h.service.GetProductById(id)
 	if err != nil {
 		fmt.Println(err)
@@ -87,8 +87,7 @@ func (h *ProductHandler) PutProduct(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("invalid id"))
 		return
 	}
-	var product *domain.Product
-	product.ID = id
+	var product = &domain.Product{ID: id}
 	err = json.NewDecoder(r.Body).Decode(&product)
 	if err != nil {
 		http.Error(w, "Incorrect body", http.StatusBadRequest)

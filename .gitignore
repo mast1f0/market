@@ -1,3 +1,5 @@
 .env
 plan.md
 tmp
+*.log
+main

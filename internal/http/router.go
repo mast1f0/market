@@ -13,10 +13,5 @@ func SetupRoutes(productHandler *handlers.ProductHandler) *chi.Mux { //, Categor
 	r.Delete("/products/{id}", productHandler.DeleteProduct)
 	r.Put("/products/{id}", productHandler.PutProduct)
 
-	//r.Get("/categories/", CategoryHandler.GetAllCategories)
-	//r.Post("/categories/", CategoryHandler.AddCategory)
-	//r.Get("/categories/{id}", CategoryHandler.GetCategoryById)
-	//r.Delete("/categories/{id}", CategoryHandler.DeleteCategoryById)
-	//r.Put("/categories/{id}", CategoryHandler.Update)
 	return r
 }
