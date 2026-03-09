@@ -1,6 +1,8 @@
 package ports
 
-import "market/internal/domain"
+import (
+	"market/internal/core/domain"
+)
 
 type CategoryRepository interface {
 	NewCategory(category *domain.Category) (*domain.Category, error)

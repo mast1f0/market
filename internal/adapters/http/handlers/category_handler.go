@@ -3,8 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"market/internal/domain"
-	"market/internal/service"
+	"market/internal/core/domain"
+	"market/internal/core/service"
 	"net/http"
 	"strconv"
 

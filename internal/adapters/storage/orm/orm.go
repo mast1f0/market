@@ -3,7 +3,7 @@ package orm
 import (
 	"fmt"
 	"market/internal/config"
-	"market/internal/domain"
+	"market/internal/core/domain"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

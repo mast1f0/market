@@ -1,7 +1,7 @@
 package http
 
 import (
-	"market/internal/http/handlers"
+	"market/internal/adapters/http/handlers"
 
 	"github.com/go-chi/chi/v5"
 )

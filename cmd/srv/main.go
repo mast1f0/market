@@ -1,10 +1,10 @@
 package main
 
 import (
+	http2 "market/internal/adapters/http"
+	"market/internal/adapters/http/handlers"
 	"market/internal/adapters/storage/orm"
-	"market/internal/http"
-	"market/internal/http/handlers"
-	"market/internal/service"
+	"market/internal/core/service"
 )
 
 func main() {
@@ -14,7 +14,7 @@ func main() {
 	//categoryService := service.NewCategoryService(repo)
 	productHandler := handlers.NewProductHandler(productService)
 	//categoryHandler := handlers.NewCategoryHandler(categoryService)
-	router := http.SetupRoutes(productHandler)
-	srv := http.NewServer(router)
+	router := http2.SetupRoutes(productHandler)
+	srv := http2.NewServer(router)
 	srv.Start()
 }

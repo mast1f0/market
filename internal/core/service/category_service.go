@@ -1,8 +1,8 @@
 package service
 
 import (
-	"market/internal/domain"
-	"market/internal/ports"
+	"market/internal/core/domain"
+	"market/internal/core/ports"
 )
 
 type CategoryService struct {

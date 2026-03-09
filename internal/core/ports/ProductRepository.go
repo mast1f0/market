@@ -1,7 +1,7 @@
 package ports
 
 import (
-	"market/internal/domain"
+	"market/internal/core/domain"
 )
 
 type ProductRepository interface {
