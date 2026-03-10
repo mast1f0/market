@@ -71,3 +71,41 @@ func (s *Storage) UpdateProduct(product *domain.Product) (*domain.Product, error
 	}
 	return product, nil
 }
+
+func (s *Storage) CreateCategory(category *domain.Category) (*domain.Category, error) {
+	res := s.db.Create(&category)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return category, nil
+}
+
+func (s *Storage) UpdateCategory(category *domain.Category) (*domain.Category, error) {
+	res := s.db.Save(&category)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return category, nil
+}
+
+func (s *Storage) DeleteCategory(id int) error {
+	var category domain.Category
+	s.db.First(&category, id)
+	res := s.db.Delete(&category)
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+func (s *Storage) GetCategory(id int) *domain.Category {
+	var category domain.Category
+	s.db.First(&category, id)
+	return &category
+}
+
+func (s *Storage) GetCategoryByName(name string) *domain.Category {
+	var category domain.Category
+	s.db.Where("name = ?", name).First(&category)
+	return &category
+}

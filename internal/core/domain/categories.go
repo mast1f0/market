@@ -1,8 +1,9 @@
 package domain
 
+import "time"
+
 type Category struct {
-	ID          int
-	ProductId   []int
-	Name        string
-	Description string // can be null
+	ID        uint      `gorm:"primarykey"`
+	Name      string    `gorm:"unique;not null"`
+	CreatedAt time.Time `gorm:"null"`
 }

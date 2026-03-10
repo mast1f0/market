@@ -11,10 +11,10 @@ func main() {
 	repo := orm.NewStorage()
 
 	productService := service.NewProductService(repo)
-	//categoryService := service.NewCategoryService(repo)
+	categoryService := service.NewCategoryService(repo)
 	productHandler := handlers.NewProductHandler(productService)
-	//categoryHandler := handlers.NewCategoryHandler(categoryService)
-	router := http2.SetupRoutes(productHandler)
+	categoryHandler := handlers.NewCategoryHandler(categoryService)
+	router := http2.SetupRoutes(productHandler, categoryHandler)
 	srv := http2.NewServer(router)
 	srv.Start()
 }
