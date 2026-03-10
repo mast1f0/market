@@ -21,9 +21,8 @@ func NewProductHandler(s *service.ProductService) *ProductHandler {
 
 func (h *ProductHandler) GetAllProducts(w http.ResponseWriter, r *http.Request) {
 	products := h.service.GetAllProducts()
-	for _, product := range products {
-		fmt.Fprintln(w, product)
-	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(products)
 }
 
 func (h *ProductHandler) AddProduct(w http.ResponseWriter, r *http.Request) {

@@ -4,12 +4,20 @@ import (
 	"market/internal/adapters/http/handlers"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 )
 
 func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handlers.CategoryHandler) *chi.Mux { //, CategoryHandler *handlers.CategoryHandler
 	r := chi.NewRouter()
-	r.Get("/products/", productHandler.GetAllProducts)
-	r.Post("/products/", productHandler.AddProduct)
+
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		AllowCredentials: false,
+	}))
+	r.Get("/products", productHandler.GetAllProducts)
+	r.Post("/products", productHandler.AddProduct)
 	r.Delete("/products/{id}", productHandler.DeleteProduct)
 	r.Put("/products/{id}", productHandler.PutProduct)
 
