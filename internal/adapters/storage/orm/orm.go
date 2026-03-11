@@ -145,3 +145,38 @@ func (s *Storage) GetCart(id int) (*domain.Cart, error) {
 	}
 	return &cart, nil
 }
+
+func (s *Storage) AddCartItem(cartItems *domain.CartItems) (*domain.CartItems, error) {
+	res := s.db.Create(&cartItems)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return cartItems, nil
+}
+
+func (s *Storage) DeleteCartItem(id int) error {
+	var cart domain.Cart
+	s.db.First(&cart, id)
+	res := s.db.Delete(&cart)
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+func (s *Storage) GetCartItems(id int) (*domain.CartItems, error) {
+	var cart domain.CartItems
+	res := s.db.First(&cart, id)
+	if res.Error != nil {
+		return nil, errors.New("This cart is not exist")
+	}
+	return &cart, nil
+}
+
+func (s *Storage) UpdateCartItem(cartItems *domain.CartItems) (*domain.CartItems, error) {
+	res := s.db.Save(&cartItems)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return cartItems, nil
+}

@@ -27,8 +27,13 @@ func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handl
 	r.Put("/categories/{id}", categoryHandler.UpdateCategory)
 
 	r.Get("/carts/{id}", cartHandler.GetCart)
-	r.Post("/carts/", cartHandler.CreateCart)
+	r.Post("/carts", cartHandler.CreateCart)
 	r.Put("/carts/{id}", cartHandler.UpdateCart)
 	r.Delete("/carts/{id}", cartHandler.DeleteCart)
+
+	r.Get("/carts/{id}", cartHandler.GetCart)
+	r.Post("/carts/{id}", cartHandler.UpdateCart)
+	r.Delete("/carts/{id}", cartHandler.DeleteCart)
+	r.Put("/carts/{id}", cartHandler.UpdateCart)
 	return r
 }
