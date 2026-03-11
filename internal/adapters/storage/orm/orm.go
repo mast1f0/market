@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"errors"
 	"fmt"
 	"market/internal/config"
 	"market/internal/core/domain"
@@ -108,4 +109,39 @@ func (s *Storage) GetCategoryByName(name string) *domain.Category {
 	var category domain.Category
 	s.db.Where("name = ?", name).First(&category)
 	return &category
+}
+
+func (s *Storage) CreateCart(cart *domain.Cart) (*domain.Cart, error) {
+	res := s.db.Create(&cart)
+	if res.Error != nil {
+		return nil, errors.New("Не удалось создать корзину")
+	}
+	return cart, nil
+}
+
+func (s *Storage) UpdateCart(cart *domain.Cart) (*domain.Cart, error) {
+	res := s.db.Save(&cart)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return cart, nil
+}
+
+func (s *Storage) DeleteCart(id int) error {
+	var cart domain.Cart
+	s.db.First(&cart, id)
+	res := s.db.Delete(&cart)
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+func (s *Storage) GetCart(id int) (*domain.Cart, error) {
+	var cart domain.Cart
+	res := s.db.First(&cart, id)
+	if res.Error != nil {
+		return nil, errors.New("This cart is not exist")
+	}
+	return &cart, nil
 }

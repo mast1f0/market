@@ -1,8 +1,7 @@
 package domain
 
-type cart struct {
-	Id        int
-	ProductId int
-	UserId    int
-	Name      string
+type Cart struct {
+	Id     int
+	UserId int
+	Name   string
 }
