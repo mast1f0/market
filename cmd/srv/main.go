@@ -12,9 +12,14 @@ func main() {
 
 	productService := service.NewProductService(repo)
 	categoryService := service.NewCategoryService(repo)
+	cartService := service.NewCartService(repo)
+	cartItemsService := service.NewCartItemsService(repo)
+
 	productHandler := handlers.NewProductHandler(productService)
 	categoryHandler := handlers.NewCategoryHandler(categoryService)
-	router := http2.SetupRoutes(productHandler, categoryHandler)
+	cartHandler := handlers.NewCartHandler(cartService)
+	cartItemsHandler := handlers.NewCartItemsHandler(cartItemsService)
+	router := http2.SetupRoutes(productHandler, categoryHandler, cartHandler, cartItemsHandler)
 	srv := http2.NewServer(router)
 	srv.Start()
 }
