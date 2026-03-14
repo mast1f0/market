@@ -10,4 +10,5 @@ type CategoryRepository interface {
 	DeleteCategory(id int) error
 	GetCategory(id int) (*domain.Category, error)
 	GetCategoryByName(name string) *domain.Category
+	GetCategories() []domain.Category
 }

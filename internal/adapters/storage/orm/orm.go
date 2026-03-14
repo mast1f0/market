@@ -111,6 +111,12 @@ func (s *Storage) GetCategory(id int) (*domain.Category, error) {
 	return &category, nil
 }
 
+func (s *Storage) GetCategories() []domain.Category {
+	var categories = make([]domain.Category, 0)
+	s.db.Find(&categories)
+	return categories
+}
+
 func (s *Storage) GetCategoryByName(name string) *domain.Category {
 	var category domain.Category
 	s.db.Where("name = ?", name).First(&category)

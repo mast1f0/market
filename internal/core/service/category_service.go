@@ -30,3 +30,7 @@ func (s *CategoryService) DeleteCategory(id int) error {
 func (s *CategoryService) GetCategoryByName(name string) *domain.Category {
 	return s.repository.GetCategoryByName(name)
 }
+
+func (s *CategoryService) GetCategories() []domain.Category {
+	return s.repository.GetCategories()
+}

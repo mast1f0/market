@@ -20,8 +20,10 @@ func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handl
 	r.Post("/products", productHandler.AddProduct)
 	r.Delete("/products/{id}", productHandler.DeleteProduct)
 	r.Put("/products/{id}", productHandler.PutProduct)
-	
+	r.Get("/products/{id}", productHandler.GetProductById)
+
 	r.Get("/categories/{id}", categoryHandler.GetCategory)
+	r.Get("/categories", categoryHandler.ListCategories)
 	r.Post("/categories", categoryHandler.AddCategory)
 	r.Delete("/categories/{id}", categoryHandler.DeleteCategory)
 	r.Put("/categories/{id}", categoryHandler.UpdateCategory)

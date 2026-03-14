@@ -31,3 +31,7 @@ func (s *ProductService) DeleteProduct(id int) error {
 func (s *ProductService) GetAllProducts() []domain.Product {
 	return s.repository.GetProducts()
 }
+
+func (s *ProductService) GetProduct(id int) (*domain.Product, error) {
+	return s.repository.GetProduct(id)
+}

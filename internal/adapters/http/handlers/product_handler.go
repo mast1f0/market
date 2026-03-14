@@ -27,8 +27,7 @@ func (h *ProductHandler) GetAllProducts(w http.ResponseWriter, r *http.Request) 
 
 func (h *ProductHandler) AddProduct(w http.ResponseWriter, r *http.Request) {
 	var Product *domain.Product
-	var err error
-	err = json.NewDecoder(r.Body).Decode(&Product)
+	err := json.NewDecoder(r.Body).Decode(&Product)
 	if err != nil {
 		http.Error(w, "Incorrect body", http.StatusBadRequest)
 		return
@@ -100,4 +99,21 @@ func (h *ProductHandler) PutProduct(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Write(productJson)
 	h.service.UpdateProduct(product)
+}
+
+func (h *ProductHandler) GetProductById(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("invalid id"))
+		return
+	}
+	product, err := h.service.GetProductById(id)
+	if err != nil {
+		w.WriteHeader(400)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(product)
 }

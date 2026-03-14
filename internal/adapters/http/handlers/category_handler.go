@@ -93,3 +93,11 @@ func (h *CategoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request)
 	jsonCategory, _ := json.Marshal(newCategory)
 	w.Write(jsonCategory)
 }
+
+func (h *CategoryHandler) ListCategories(w http.ResponseWriter, r *http.Request) {
+	categories := h.service.GetCategories()
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	jsonCategory, _ := json.Marshal(categories)
+	w.Write(jsonCategory)
+}
