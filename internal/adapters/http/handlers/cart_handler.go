@@ -26,8 +26,7 @@ func (h *CartHandler) CreateCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var newCart *domain.Cart
-	newCart, err = h.repo.CreateCart(&Cart)
+	newCart, err := h.repo.CreateCart(&Cart)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -68,8 +67,7 @@ func (h *CartHandler) UpdateCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	Cart.Id = id
-	var newCart *domain.Cart
-	newCart, err = h.repo.UpdateCart(&Cart)
+	newCart, err := h.repo.UpdateCart(&Cart)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return

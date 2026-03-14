@@ -57,8 +57,7 @@ func (h *CartItemsHandler) GetCartItems(w http.ResponseWriter, r *http.Request) 
 		w.Write([]byte("invalid id"))
 		return
 	}
-	var items *domain.CartItems
-	items, err = h.repo.GetCartItems(id)
+	items, err := h.repo.GetCartItems(id)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(items)
 }

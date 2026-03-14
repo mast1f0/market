@@ -41,10 +41,13 @@ func (s *Storage) GetProducts() []domain.Product {
 	return products
 }
 
-func (s *Storage) GetProduct(id int) *domain.Product {
+func (s *Storage) GetProduct(id int) (*domain.Product, error) {
 	var product domain.Product
-	s.db.First(&product, id)
-	return &product
+	err := s.db.First(&product, id)
+	if err.Error != nil {
+		return nil, errors.New("product not found")
+	}
+	return &product, nil
 }
 
 func (s *Storage) DeleteProduct(id int) error {
@@ -84,7 +87,7 @@ func (s *Storage) CreateCategory(category *domain.Category) (*domain.Category, e
 func (s *Storage) UpdateCategory(category *domain.Category) (*domain.Category, error) {
 	res := s.db.Save(&category)
 	if res.Error != nil {
-		return nil, res.Error
+		return nil, errors.New("Не удалось обновить")
 	}
 	return category, nil
 }
@@ -99,10 +102,13 @@ func (s *Storage) DeleteCategory(id int) error {
 	return nil
 }
 
-func (s *Storage) GetCategory(id int) *domain.Category {
+func (s *Storage) GetCategory(id int) (*domain.Category, error) {
 	var category domain.Category
-	s.db.First(&category, id)
-	return &category
+	err := s.db.First(&category, id).Error
+	if err != nil {
+		return nil, errors.New("category not found")
+	}
+	return &category, nil
 }
 
 func (s *Storage) GetCategoryByName(name string) *domain.Category {

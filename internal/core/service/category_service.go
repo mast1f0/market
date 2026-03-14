@@ -13,7 +13,7 @@ func NewCategoryService(repository ports.CategoryRepository) *CategoryService {
 	return &CategoryService{repository: repository}
 }
 
-func (s *CategoryService) GetCategory(id int) *domain.Category {
+func (s *CategoryService) GetCategory(id int) (*domain.Category, error) {
 	return s.repository.GetCategory(id)
 }
 

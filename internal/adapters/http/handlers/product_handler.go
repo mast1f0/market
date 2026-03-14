@@ -58,12 +58,10 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("invalid id"))
 		return
 	}
-	var product = &domain.Product{ID: uint(id)}
-	product = h.service.GetProductById(id)
+	product, err := h.service.GetProductById(id)
 	if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("invalid id"))
+		w.WriteHeader(400)
+		w.Write([]byte(err.Error()))
 		return
 	}
 	productJson, err := json.Marshal(product)
