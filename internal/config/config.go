@@ -16,7 +16,7 @@ func LoadConfig() (*Config, error) {
 	var config Config
 	viper.SetConfigName(".env")
 	viper.SetConfigType("env")
-	viper.AddConfigPath("/home/mast1f0/market/configs") // потом убрать
+	viper.AddConfigPath("./configs") // потом убрать
 	err := viper.ReadInConfig()
 	if err != nil {
 		return nil, err

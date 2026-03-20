@@ -5,6 +5,8 @@ go 1.25.6
 require (
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/go-chi/cors v1.2.2
+	github.com/golang-jwt/jwt/v5 v5.3.1
+	github.com/sirupsen/logrus v1.9.4
 	github.com/spf13/viper v1.21.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1

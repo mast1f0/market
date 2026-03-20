@@ -26,12 +26,19 @@ func (h *ProductHandler) GetAllProducts(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *ProductHandler) AddProduct(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value("user_id").(int64)
+	if !ok {
+		http.Error(w, "cannot get user id", http.StatusUnauthorized)
+		return
+	}
 	var Product *domain.Product
+
 	err := json.NewDecoder(r.Body).Decode(&Product)
 	if err != nil {
 		http.Error(w, "Incorrect body", http.StatusBadRequest)
 		return
 	}
+	Product.OwnerID = userID
 	product, err := h.service.AddToProduct(Product)
 	if err != nil {
 		fmt.Println(err)
@@ -50,6 +57,12 @@ func (h *ProductHandler) AddProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value("user_id").(int64)
+	if !ok {
+		http.Error(w, "cannot get user id", http.StatusUnauthorized)
+		return
+	}
+
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		fmt.Println(err)
@@ -61,6 +74,12 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(400)
 		w.Write([]byte(err.Error()))
+		return
+	}
+
+	if product.OwnerID != userID {
+		w.WriteHeader(401)
+		w.Write([]byte("you are not the owner of this product"))
 		return
 	}
 	productJson, err := json.Marshal(product)
@@ -76,6 +95,12 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ProductHandler) PutProduct(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value("user_id").(int64)
+	if !ok {
+		http.Error(w, "cannot get user id", http.StatusUnauthorized)
+		return
+	}
+
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		fmt.Println(err)
@@ -83,14 +108,21 @@ func (h *ProductHandler) PutProduct(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("invalid id"))
 		return
 	}
-	var product = &domain.Product{ID: uint(id)}
-	err = json.NewDecoder(r.Body).Decode(&product)
+
+	product, _ := h.service.GetProductById(id)
+	if product.OwnerID != userID {
+		w.WriteHeader(401)
+		w.Write([]byte("you are not the owner of this product"))
+		return
+	}
+	var newProduct = &domain.Product{ID: uint(id)}
+	err = json.NewDecoder(r.Body).Decode(&newProduct)
 	if err != nil {
 		http.Error(w, "Incorrect body", http.StatusBadRequest)
 		return
 	}
 	defer r.Body.Close()
-	productJson, err := json.Marshal(product)
+	productJson, err := json.Marshal(newProduct)
 	if err != nil {
 		fmt.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -98,7 +130,7 @@ func (h *ProductHandler) PutProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write(productJson)
-	h.service.UpdateProduct(product)
+	h.service.UpdateProduct(newProduct)
 }
 
 func (h *ProductHandler) GetProductById(w http.ResponseWriter, r *http.Request) {

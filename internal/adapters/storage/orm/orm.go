@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"market/internal/config"
 	"market/internal/core/domain"
+	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -27,7 +28,13 @@ func NewStorage() *Storage {
 	)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic("failed to connect database")
+		for i := 0; i < 10; i++ {
+			db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+			if err == nil {
+				break
+			}
+			time.Sleep(5 * time.Second)
+		}
 	}
 
 	return &Storage{
