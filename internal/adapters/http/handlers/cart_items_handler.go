@@ -39,8 +39,7 @@ func (h *CartItemsHandler) DeleteItemCart(w http.ResponseWriter, r *http.Request
 		w.Write([]byte("invalid id"))
 		return
 	}
-
-	err = h.repo.DeleteCartItem(id)
+	err = h.repo.DeleteCartItem(int64(id))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
@@ -57,7 +56,7 @@ func (h *CartItemsHandler) GetCartItems(w http.ResponseWriter, r *http.Request) 
 		w.Write([]byte("invalid id"))
 		return
 	}
-	items, err := h.repo.GetCartItems(id)
+	items, err := h.repo.GetCartItems(int64(id))
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(items)
 }
@@ -75,7 +74,7 @@ func (h *CartItemsHandler) UpdateCartItem(w http.ResponseWriter, r *http.Request
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	CartItem.Id = id
+	CartItem.Id = int64(id)
 	_, err = h.repo.UpdateCartItem(&CartItem)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)

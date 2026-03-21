@@ -48,7 +48,7 @@ func (s *Storage) GetProducts() []domain.Product {
 	return products
 }
 
-func (s *Storage) GetProduct(id int) (*domain.Product, error) {
+func (s *Storage) GetProduct(id int64) (*domain.Product, error) {
 	var product domain.Product
 	err := s.db.First(&product, id)
 	if err.Error != nil {
@@ -57,7 +57,7 @@ func (s *Storage) GetProduct(id int) (*domain.Product, error) {
 	return &product, nil
 }
 
-func (s *Storage) DeleteProduct(id int) error {
+func (s *Storage) DeleteProduct(id int64) error {
 	var product domain.Product
 	s.db.First(&product, id)
 	res := s.db.Delete(&product)
@@ -99,7 +99,7 @@ func (s *Storage) UpdateCategory(category *domain.Category) (*domain.Category, e
 	return category, nil
 }
 
-func (s *Storage) DeleteCategory(id int) error {
+func (s *Storage) DeleteCategory(id int64) error {
 	var category domain.Category
 	s.db.First(&category, id)
 	res := s.db.Delete(&category)
@@ -109,7 +109,7 @@ func (s *Storage) DeleteCategory(id int) error {
 	return nil
 }
 
-func (s *Storage) GetCategory(id int) (*domain.Category, error) {
+func (s *Storage) GetCategory(id int64) (*domain.Category, error) {
 	var category domain.Category
 	err := s.db.First(&category, id).Error
 	if err != nil {
@@ -146,7 +146,7 @@ func (s *Storage) UpdateCart(cart *domain.Cart) (*domain.Cart, error) {
 	return cart, nil
 }
 
-func (s *Storage) DeleteCart(id int) error {
+func (s *Storage) DeleteCart(id int64) error {
 	var cart domain.Cart
 	s.db.First(&cart, id)
 	res := s.db.Delete(&cart)
@@ -156,7 +156,7 @@ func (s *Storage) DeleteCart(id int) error {
 	return nil
 }
 
-func (s *Storage) GetCart(id int) (*domain.Cart, error) {
+func (s *Storage) GetCart(id int64) (*domain.Cart, error) {
 	var cart domain.Cart
 	res := s.db.First(&cart, id)
 	if res.Error != nil {
@@ -173,7 +173,7 @@ func (s *Storage) AddCartItem(cartItems *domain.CartItems) (*domain.CartItems, e
 	return cartItems, nil
 }
 
-func (s *Storage) DeleteCartItem(id int) error {
+func (s *Storage) DeleteCartItem(id int64) error {
 	var cart domain.Cart
 	s.db.First(&cart, id)
 	res := s.db.Delete(&cart)
@@ -183,7 +183,7 @@ func (s *Storage) DeleteCartItem(id int) error {
 	return nil
 }
 
-func (s *Storage) GetCartItems(id int) (*domain.CartItems, error) {
+func (s *Storage) GetCartItems(id int64) (*domain.CartItems, error) {
 	var cart domain.CartItems
 	res := s.db.First(&cart, id)
 	if res.Error != nil {

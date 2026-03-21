@@ -3,7 +3,7 @@ package domain
 import "time"
 
 type Product struct {
-	ID          uint      `gorm:"primarykey" json:"id,omitempty"`
+	ID          int64     `gorm:"primarykey" json:"id,omitempty"`
 	OwnerID     int64     `gorm:"not null" json:"owner_id,omitempty"`
 	Name        string    `gorm:"not null;index" json:"name"`
 	Description string    `json:"description"`

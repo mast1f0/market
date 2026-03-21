@@ -70,7 +70,7 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("invalid id"))
 		return
 	}
-	product, err := h.service.GetProductById(id)
+	product, err := h.service.GetProductById(int64(id))
 	if err != nil {
 		w.WriteHeader(400)
 		w.Write([]byte(err.Error()))
@@ -90,7 +90,7 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write(productJson)
-	h.service.DeleteProduct(id)
+	h.service.DeleteProduct(int64(id))
 
 }
 
@@ -109,13 +109,13 @@ func (h *ProductHandler) PutProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	product, _ := h.service.GetProductById(id)
+	product, _ := h.service.GetProductById(int64(id))
 	if product.OwnerID != userID {
 		w.WriteHeader(401)
 		w.Write([]byte("you are not the owner of this product"))
 		return
 	}
-	var newProduct = &domain.Product{ID: uint(id)}
+	var newProduct = &domain.Product{ID: (int64(id))}
 	err = json.NewDecoder(r.Body).Decode(&newProduct)
 	if err != nil {
 		http.Error(w, "Incorrect body", http.StatusBadRequest)
@@ -140,7 +140,7 @@ func (h *ProductHandler) GetProductById(w http.ResponseWriter, r *http.Request) 
 		w.Write([]byte("invalid id"))
 		return
 	}
-	product, err := h.service.GetProductById(id)
+	product, err := h.service.GetProductById(int64(id))
 	if err != nil {
 		w.WriteHeader(400)
 		w.Write([]byte(err.Error()))

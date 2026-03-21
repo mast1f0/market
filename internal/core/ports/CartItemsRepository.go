@@ -6,7 +6,7 @@ import (
 
 type CartItemsRepository interface {
 	AddCartItem(cartItems *domain.CartItems) (*domain.CartItems, error)
-	DeleteCartItem(id int) error
-	GetCartItems(id int) (*domain.CartItems, error)
+	DeleteCartItem(id int64) error
+	GetCartItems(id int64) (*domain.CartItems, error)
 	UpdateCartItem(cartItems *domain.CartItems) (*domain.CartItems, error)
 }

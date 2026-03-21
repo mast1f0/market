@@ -13,7 +13,7 @@ func NewCartService(cartRepo ports.CartRepository) *CartService {
 	return &CartService{repo: cartRepo}
 }
 
-func (s *CartService) GetCart(id int) (*domain.Cart, error) {
+func (s *CartService) GetCart(id int64) (*domain.Cart, error) {
 	return s.repo.GetCart(id)
 }
 
@@ -24,6 +24,6 @@ func (s *CartService) CreateCart(cart *domain.Cart) (*domain.Cart, error) {
 	return s.repo.CreateCart(cart)
 }
 
-func (s *CartService) DeleteCart(id int) error {
+func (s *CartService) DeleteCart(id int64) error {
 	return s.repo.DeleteCart(id)
 }

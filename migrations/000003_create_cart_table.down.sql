@@ -1,1 +1,1 @@
-DROP TABLE cart;
+DROP TABLE carts;

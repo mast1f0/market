@@ -43,7 +43,7 @@ func (h *CategoryHandler) GetCategory(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("invalid category id"))
 		return
 	}
-	category, err := h.service.GetCategory(id)
+	category, err := h.service.GetCategory(int64(id))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
@@ -60,7 +60,7 @@ func (h *CategoryHandler) DeleteCategory(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("invalid category id"))
 	}
-	err = h.service.DeleteCategory(id)
+	err = h.service.DeleteCategory(int64(id))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -76,7 +76,7 @@ func (h *CategoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	var category = domain.Category{
-		ID: uint(id),
+		ID: int64(id),
 	}
 	err = json.NewDecoder(r.Body).Decode(&category)
 	if err != nil {

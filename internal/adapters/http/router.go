@@ -33,18 +33,8 @@ func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handl
 	r.Group(func(r chi.Router) {
 		r.Use(middlware.AuthMiddleware(jwt))
 
-		r.Get("/carts/{id}", cartHandler.GetCart)
-		r.Post("/carts", cartHandler.CreateCart)
-		r.Put("/carts/{id}", cartHandler.UpdateCart)
-		r.Delete("/carts/{id}", cartHandler.DeleteCart)
-
-		r.Get("/cartsItems/{id}", CartItemsHandler.GetCartItems)
-		r.Post("/cartsItems/{id}", CartItemsHandler.AddItemCart)
-		r.Delete("/cartsItems/{id}", CartItemsHandler.DeleteItemCart)
-		r.Put("/cartsItems/{id}", CartItemsHandler.UpdateCartItem)
-
 		r.Group(func(r chi.Router) {
-			r.Use(middlware.RoleMiddleware("buyer", "seller", "admin"))
+			r.Use(middlware.RoleMiddleware("seller", "admin"))
 
 			r.Post("/products", productHandler.AddProduct)
 			r.Delete("/products/{id}", productHandler.DeleteProduct)
@@ -55,6 +45,18 @@ func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handl
 			r.Put("/categories/{id}", categoryHandler.UpdateCategory)
 		})
 
+		r.Group(func(r chi.Router) {
+			r.Use(middlware.RoleMiddleware("buyer", "seller", "admin"))
+			r.Get("/cart/{id}", cartHandler.GetCart)
+			r.Post("/cart", cartHandler.CreateCart)
+			r.Put("/cart/{id}", cartHandler.UpdateCart)
+			r.Delete("/cart/{id}", cartHandler.DeleteCart)
+
+			r.Get("/cartsItems/{id}", CartItemsHandler.GetCartItems)
+			r.Post("/cartsItems/{id}", CartItemsHandler.AddItemCart)
+			r.Delete("/cartsItems/{id}", CartItemsHandler.DeleteItemCart)
+			r.Put("/cartsItems/{id}", CartItemsHandler.UpdateCartItem)
+		})
 	})
 
 	return r

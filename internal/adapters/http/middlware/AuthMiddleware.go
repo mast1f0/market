@@ -2,7 +2,6 @@ package middlware
 
 import (
 	"context"
-	"fmt"
 	jwtutil "market/internal/adapters/jwt"
 	"net/http"
 )
@@ -12,7 +11,6 @@ func AuthMiddleware(jwtM *jwtutil.Manager) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 			authHeader := r.Header.Get("Authorization")
-			fmt.Println(authHeader)
 			if authHeader == "" {
 				http.Error(w, "no token", http.StatusUnauthorized)
 				return
@@ -33,6 +31,7 @@ func AuthMiddleware(jwtM *jwtutil.Manager) func(http.Handler) http.Handler {
 			}
 
 			ctx := context.WithValue(r.Context(), "user_id", claims.UserID)
+			ctx = context.WithValue(ctx, "role", string(claims.Role))
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

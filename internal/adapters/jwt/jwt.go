@@ -4,12 +4,21 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+type Role string
+
+const (
+	RoleAdmin  Role = "admin"
+	RoleSeller Role = "user"
+	RoleBuyer  Role = "buyer"
+)
+
 type Manager struct {
 	Secret []byte
 }
 
 type Claims struct {
 	UserID int64 `json:"user_id"`
+	Role   Role  `json:"role"`
 	jwt.RegisteredClaims
 }
 

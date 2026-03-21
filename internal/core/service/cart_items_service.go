@@ -17,11 +17,11 @@ func (s *CartItemsService) AddCartItem(cartItems *domain.CartItems) (*domain.Car
 	return s.repo.AddCartItem(cartItems)
 }
 
-func (s *CartItemsService) DeleteCartItem(id int) error {
+func (s *CartItemsService) DeleteCartItem(id int64) error {
 	return s.repo.DeleteCartItem(id)
 }
 
-func (s *CartItemsService) GetCartItems(id int) (*domain.CartItems, error) {
+func (s *CartItemsService) GetCartItems(id int64) (*domain.CartItems, error) {
 	return s.repo.GetCartItems(id)
 }
 

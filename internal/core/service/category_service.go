@@ -13,7 +13,7 @@ func NewCategoryService(repository ports.CategoryRepository) *CategoryService {
 	return &CategoryService{repository: repository}
 }
 
-func (s *CategoryService) GetCategory(id int) (*domain.Category, error) {
+func (s *CategoryService) GetCategory(id int64) (*domain.Category, error) {
 	return s.repository.GetCategory(id)
 }
 
@@ -24,7 +24,7 @@ func (s *CategoryService) CreateCategory(category *domain.Category) (*domain.Cat
 func (s *CategoryService) UpdateCategory(category *domain.Category) (*domain.Category, error) {
 	return s.repository.UpdateCategory(category)
 }
-func (s *CategoryService) DeleteCategory(id int) error {
+func (s *CategoryService) DeleteCategory(id int64) error {
 	return s.repository.DeleteCategory(id)
 }
 func (s *CategoryService) GetCategoryByName(name string) *domain.Category {

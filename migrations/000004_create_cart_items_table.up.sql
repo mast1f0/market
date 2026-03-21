@@ -6,7 +6,7 @@ CREATE TABLE cart_items (
 
     CONSTRAINT fk_cart
         FOREIGN KEY(cart_id)
-            REFERENCES cart(id)
+            REFERENCES carts(id)
                  ON DELETE CASCADE,
 
     CONSTRAINT fk_product

@@ -5,9 +5,6 @@ import (
 	"market/internal/core/domain"
 	"market/internal/core/service"
 	"net/http"
-	"strconv"
-
-	"github.com/go-chi/chi/v5"
 )
 
 type CartHandler struct {
@@ -19,16 +16,17 @@ func NewCartHandler(repo *service.CartService) *CartHandler {
 }
 
 func (h *CartHandler) CreateCart(w http.ResponseWriter, r *http.Request) {
-	var Cart domain.Cart
-	err := json.NewDecoder(r.Body).Decode(&Cart)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+	userID, ok := r.Context().Value("user_id").(int64)
+	if !ok {
+		http.Error(w, "cannot get user id", http.StatusUnauthorized)
 		return
 	}
-
-	newCart, err := h.repo.CreateCart(&Cart)
+	newCart, err := h.repo.CreateCart(&domain.Cart{
+		UserId: userID,
+	})
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
 		return
 	}
 	newCartJson, _ := json.Marshal(newCart)
@@ -38,9 +36,9 @@ func (h *CartHandler) CreateCart(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CartHandler) GetCart(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+	id, ok := r.Context().Value("user_id").(int64)
+	if !ok {
+		http.Error(w, "cannot get user id", http.StatusUnauthorized)
 		return
 	}
 	cart, err := h.repo.GetCart(id)
@@ -61,9 +59,9 @@ func (h *CartHandler) UpdateCart(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+	id, ok := r.Context().Value("user_id").(int64)
+	if !ok {
+		http.Error(w, "cannot get user id", http.StatusUnauthorized)
 		return
 	}
 	Cart.Id = id
@@ -79,12 +77,12 @@ func (h *CartHandler) UpdateCart(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CartHandler) DeleteCart(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+	id, ok := r.Context().Value("user_id").(int64)
+	if !ok {
+		http.Error(w, "cannot get user id", http.StatusUnauthorized)
 		return
 	}
-	err = h.repo.DeleteCart(id)
+	err := h.repo.DeleteCart(id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
