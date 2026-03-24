@@ -18,7 +18,6 @@ func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handl
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
 		AllowCredentials: false,
 	}))
-	r.Use(middlware.AuthMiddleware(jwt))
 
 	//не требует авторизации
 	r.Group(func(r chi.Router) {
@@ -47,10 +46,10 @@ func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handl
 
 		r.Group(func(r chi.Router) {
 			r.Use(middlware.RoleMiddleware("buyer", "seller", "admin"))
-			r.Get("/cart/{id}", cartHandler.GetCart)
+			r.Get("/cart", cartHandler.GetCart)
 			r.Post("/cart", cartHandler.CreateCart)
-			r.Put("/cart/{id}", cartHandler.UpdateCart)
-			r.Delete("/cart/{id}", cartHandler.DeleteCart)
+			r.Put("/cart", cartHandler.UpdateCart)
+			r.Delete("/cart", cartHandler.DeleteCart)
 
 			r.Get("/cartsItems/{id}", CartItemsHandler.GetCartItems)
 			r.Post("/cartsItems/{id}", CartItemsHandler.AddItemCart)
