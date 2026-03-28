@@ -1,22 +1,31 @@
 package main
 
 import (
+	"flag"
 	http2 "market/internal/adapters/http"
 	"market/internal/adapters/http/handlers"
 	jwtutil "market/internal/adapters/jwt"
 	"market/internal/adapters/storage/orm"
+	s3storage "market/internal/adapters/storage/s3"
 	"market/internal/core/service"
 	"market/internal/logger"
-
-	log "github.com/sirupsen/logrus"
+	"market/internal/seed"
 )
 
 func main() {
 	logger.Init()
-	repo := orm.NewStorage()
+	seedFlag := flag.Bool("seed", false, "run seed")
+	flag.Parse()
 
-	log.Debug("init storage")
-	productService := service.NewProductService(repo)
+	repo := orm.NewStorage()
+	if *seedFlag {
+		seed.SeedCategories(repo)
+		seed.SeedProducts(repo)
+	}
+	s3 := s3storage.NewS3Client("BUCKET")
+
+	s3Storage := service.NewS3Service(s3)
+	productService := service.NewProductService(repo, s3Storage)
 	categoryService := service.NewCategoryService(repo)
 	cartService := service.NewCartService(repo)
 	cartItemsService := service.NewCartItemsService(repo)

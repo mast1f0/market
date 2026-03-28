@@ -7,10 +7,11 @@ import (
 
 type ProductService struct {
 	repository ports.ProductRepository
+	S3storage  ports.S3Repository
 }
 
-func NewProductService(repository ports.ProductRepository) *ProductService {
-	return &ProductService{repository: repository}
+func NewProductService(repository ports.ProductRepository, s3 ports.S3Repository) *ProductService {
+	return &ProductService{repository: repository, S3storage: s3}
 }
 
 func (s *ProductService) GetProductById(id int64) (*domain.Product, error) {
@@ -34,4 +35,8 @@ func (s *ProductService) GetAllProducts() []domain.Product {
 
 func (s *ProductService) GetProduct(id int64) (*domain.Product, error) {
 	return s.repository.GetProduct(id)
+}
+
+func (s *ProductService) UploadImage(data []byte, filename string) (string, error) {
+	return s.S3storage.UploadFile(filename, data)
 }

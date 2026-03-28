@@ -6,6 +6,7 @@ CREATE TABLE products (
     price NUMERIC(10,2) NOT NULL,
     category_id INT,
     stock INT DEFAULT 0,
+    image_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_category
