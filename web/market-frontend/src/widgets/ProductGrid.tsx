@@ -1,33 +1,43 @@
+import { useState, useEffect } from "react";
 import ProductCard from "../elements/Card.tsx";
 
-const products = [
-    {
-        name: "Ноутбук",
-        description: "Мощный игровой ноутбук",
-        price: "1500$",
-        imageUrl: "https://via.placeholder.com/300x200",
-    },
-    {
-        name: "Смартфон",
-        description: "Современный смартфон с камерой 108MP",
-        price: "800$",
-        imageUrl: "https://via.placeholder.com/300x200",
-    },
-    {
-        name: "Наушники",
-        description: "Беспроводные наушники с шумоподавлением",
-        price: "200$",
-        imageUrl: "https://via.placeholder.com/300x200",
-    },
-    {
-        name: "Часы",
-        description: "Умные часы с большим дисплеем",
-        price: "300$",
-        imageUrl: "https://via.placeholder.com/300x200",
-    },
-];
+type Product = {
+    name: string;
+    description: string;
+    price: string;
+    imageUrl: string;
+};
+
+const fetchProduct = async (): Promise<Product[]> => {
+    try {
+        const response = await fetch('http://localhost:8080/products');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        return [];
+    }
+};
 
 export default function ProductGrid() {
+    const [products, setProducts] = useState<Product[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const loadProducts = async () => {
+            const data = await fetchProduct();
+            setProducts(data);
+            setLoading(false);
+        };
+
+        loadProducts();
+    }, []);
+
+    if (loading) {
+        return <div className="p-6">Загрузка...</div>;
+    }
+
     return (
         <div className="p-6 bg-gray-100 min-h-screen">
             <h1 className="text-2xl font-bold mb-6">Наши товары</h1>
