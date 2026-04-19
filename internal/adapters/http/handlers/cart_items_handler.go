@@ -2,86 +2,192 @@ package handlers
 
 import (
 	"encoding/json"
-	"market/internal/core/domain"
-	"market/internal/core/service"
 	"net/http"
 	"strconv"
+
+	"market/internal/adapters/http/dto"
+	"market/internal/adapters/http/helpers"
+	"market/internal/core/service"
 
 	"github.com/go-chi/chi/v5"
 )
 
 type CartItemsHandler struct {
-	repo *service.CartItemsService
+	items *service.CartItemsService
+	carts *service.CartService
 }
 
-func NewCartItemsHandler(repo *service.CartItemsService) *CartItemsHandler {
-	return &CartItemsHandler{
-		repo: repo,
-	}
+func NewCartItemsHandler(items *service.CartItemsService, carts *service.CartService) *CartItemsHandler {
+	return &CartItemsHandler{items: items, carts: carts}
 }
 
 func (h *CartItemsHandler) AddItemCart(w http.ResponseWriter, r *http.Request) {
-	var CartItem domain.CartItems
-	err := json.NewDecoder(r.Body).Decode(&CartItem)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+	userID, ok := r.Context().Value("user_id").(int64)
+	if !ok {
+		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
 		return
 	}
-	cartItemJson, _ := json.Marshal(CartItem)
-	w.WriteHeader(http.StatusCreated)
-	w.Write(cartItemJson)
+
+	cartID, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil || cartID < 1 {
+		helpers.RespondError(w, http.StatusBadRequest, "invalid cart id")
+		return
+	}
+
+	cart, err := h.carts.GetCartByID(cartID)
+	if err != nil {
+		if helpers.HTTPStatusForDB(err) == http.StatusNotFound {
+			helpers.RespondError(w, http.StatusNotFound, "cart not found")
+			return
+		}
+		helpers.RespondError(w, http.StatusInternalServerError, "failed to load cart")
+		return
+	}
+	if cart.UserId != userID {
+		helpers.RespondError(w, http.StatusForbidden, "cart does not belong to current user")
+		return
+	}
+
+	var req dto.AddCartItemRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.RespondError(w, http.StatusBadRequest, "invalid json body")
+		return
+	}
+	if err := req.Validate(); err != nil {
+		helpers.RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	created, err := h.items.AddCartItem(req.ToDomain(cartID))
+	if err != nil {
+		helpers.RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	helpers.RespondJSON(w, http.StatusCreated, created)
 }
 
 func (h *CartItemsHandler) DeleteItemCart(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("invalid id"))
-		return
-	}
-	err = h.repo.DeleteCartItem(int64(id))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+	userID, ok := r.Context().Value("user_id").(int64)
+	if !ok {
+		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil || id < 1 {
+		helpers.RespondError(w, http.StatusBadRequest, "invalid id")
+		return
+	}
+
+	item, err := h.items.GetCartItems(id)
+	if err != nil {
+		if helpers.HTTPStatusForDB(err) == http.StatusNotFound {
+			helpers.RespondError(w, http.StatusNotFound, "cart item not found")
+			return
+		}
+		helpers.RespondError(w, http.StatusInternalServerError, "failed to load cart item")
+		return
+	}
+
+	cart, err := h.carts.GetCartByID(item.CartId)
+	if err != nil || cart.UserId != userID {
+		helpers.RespondError(w, http.StatusForbidden, "cannot delete this cart item")
+		return
+	}
+
+	if err := h.items.DeleteCartItem(id); err != nil {
+		if helpers.HTTPStatusForDB(err) == http.StatusNotFound {
+			helpers.RespondError(w, http.StatusNotFound, "cart item not found")
+			return
+		}
+		helpers.RespondError(w, http.StatusInternalServerError, "failed to delete cart item")
+		return
+	}
+
+	helpers.RespondJSON(w, http.StatusNoContent, nil)
 }
 
 func (h *CartItemsHandler) GetCartItems(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("invalid id"))
+	userID, ok := r.Context().Value("user_id").(int64)
+	if !ok {
+		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
 		return
 	}
-	items, err := h.repo.GetCartItems(int64(id))
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(items)
+
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil || id < 1 {
+		helpers.RespondError(w, http.StatusBadRequest, "invalid id")
+		return
+	}
+
+	items, err := h.items.GetCartItems(id)
+	if err != nil {
+		if helpers.HTTPStatusForDB(err) == http.StatusNotFound {
+			helpers.RespondError(w, http.StatusNotFound, "cart item not found")
+			return
+		}
+		helpers.RespondError(w, http.StatusInternalServerError, "failed to load cart item")
+		return
+	}
+
+	cart, err := h.carts.GetCartByID(items.CartId)
+	if err != nil || cart.UserId != userID {
+		helpers.RespondError(w, http.StatusForbidden, "cannot access this cart item")
+		return
+	}
+
+	helpers.RespondJSON(w, http.StatusOK, items)
 }
 
 func (h *CartItemsHandler) UpdateCartItem(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("invalid id"))
+	userID, ok := r.Context().Value("user_id").(int64)
+	if !ok {
+		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
 		return
 	}
-	var CartItem domain.CartItems
-	err = json.NewDecoder(r.Body).Decode(&CartItem)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil || id < 1 {
+		helpers.RespondError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
-	CartItem.Id = int64(id)
-	_, err = h.repo.UpdateCartItem(&CartItem)
+
+	existing, err := h.items.GetCartItems(id)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		if helpers.HTTPStatusForDB(err) == http.StatusNotFound {
+			helpers.RespondError(w, http.StatusNotFound, "cart item not found")
+			return
+		}
+		helpers.RespondError(w, http.StatusInternalServerError, "failed to load cart item")
 		return
 	}
-	cartItemJson, _ := json.Marshal(CartItem)
-	w.WriteHeader(http.StatusCreated)
-	w.Write(cartItemJson)
+
+	cart, err := h.carts.GetCartByID(existing.CartId)
+	if err != nil || cart.UserId != userID {
+		helpers.RespondError(w, http.StatusForbidden, "cannot update this cart item")
+		return
+	}
+
+	var req dto.UpdateCartItemRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.RespondError(w, http.StatusBadRequest, "invalid json body")
+		return
+	}
+	if err := req.Validate(); err != nil {
+		helpers.RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	item := *existing
+	req.ApplyTo(&item)
+	item.Id = id
+
+	updated, err := h.items.UpdateCartItem(&item)
+	if err != nil {
+		helpers.RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	helpers.RespondJSON(w, http.StatusOK, updated)
 }

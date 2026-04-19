@@ -3,8 +3,8 @@ package orm
 import (
 	"errors"
 	"fmt"
-	"market/internal/config"
 	"market/internal/core/domain"
+	"market/internal/engine/config"
 	"time"
 
 	"gorm.io/driver/postgres"
@@ -50,21 +50,18 @@ func (s *Storage) GetProducts() []domain.Product {
 
 func (s *Storage) GetProduct(id int64) (*domain.Product, error) {
 	var product domain.Product
-	err := s.db.First(&product, id)
-	if err.Error != nil {
-		return nil, errors.New("product not found")
+	if err := s.db.First(&product, id).Error; err != nil {
+		return nil, err
 	}
 	return &product, nil
 }
 
 func (s *Storage) DeleteProduct(id int64) error {
 	var product domain.Product
-	s.db.First(&product, id)
-	res := s.db.Delete(&product)
-	if res.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound
+	if err := s.db.First(&product, id).Error; err != nil {
+		return err
 	}
-	return nil
+	return s.db.Delete(&product).Error
 }
 
 func (s *Storage) CreateProduct(product *domain.Product) (*domain.Product, error) {
@@ -101,19 +98,16 @@ func (s *Storage) UpdateCategory(category *domain.Category) (*domain.Category, e
 
 func (s *Storage) DeleteCategory(id int64) error {
 	var category domain.Category
-	s.db.First(&category, id)
-	res := s.db.Delete(&category)
-	if res.Error != nil {
-		return res.Error
+	if err := s.db.First(&category, id).Error; err != nil {
+		return err
 	}
-	return nil
+	return s.db.Delete(&category).Error
 }
 
 func (s *Storage) GetCategory(id int64) (*domain.Category, error) {
 	var category domain.Category
-	err := s.db.First(&category, id).Error
-	if err != nil {
-		return nil, errors.New("category not found")
+	if err := s.db.First(&category, id).Error; err != nil {
+		return nil, err
 	}
 	return &category, nil
 }
@@ -146,21 +140,26 @@ func (s *Storage) UpdateCart(cart *domain.Cart) (*domain.Cart, error) {
 	return cart, nil
 }
 
-func (s *Storage) DeleteCart(id int64) error {
+func (s *Storage) DeleteCart(userID int64) error {
 	var cart domain.Cart
-	s.db.First(&cart, id)
-	res := s.db.Delete(&cart)
-	if res.Error != nil {
-		return res.Error
+	if err := s.db.Where("user_id = ?", userID).First(&cart).Error; err != nil {
+		return err
 	}
-	return nil
+	return s.db.Delete(&cart).Error
 }
 
-func (s *Storage) GetCart(id int64) (*domain.Cart, error) {
+func (s *Storage) GetCart(userID int64) (*domain.Cart, error) {
 	var cart domain.Cart
-	res := s.db.First(&cart, id)
-	if res.Error != nil {
-		return nil, errors.New("This cart is not exist")
+	if err := s.db.Where("user_id = ?", userID).First(&cart).Error; err != nil {
+		return nil, err
+	}
+	return &cart, nil
+}
+
+func (s *Storage) GetCartByID(id int64) (*domain.Cart, error) {
+	var cart domain.Cart
+	if err := s.db.First(&cart, id).Error; err != nil {
+		return nil, err
 	}
 	return &cart, nil
 }
@@ -174,22 +173,19 @@ func (s *Storage) AddCartItem(cartItems *domain.CartItems) (*domain.CartItems, e
 }
 
 func (s *Storage) DeleteCartItem(id int64) error {
-	var cart domain.Cart
-	s.db.First(&cart, id)
-	res := s.db.Delete(&cart)
-	if res.Error != nil {
-		return res.Error
+	var item domain.CartItems
+	if err := s.db.First(&item, id).Error; err != nil {
+		return err
 	}
-	return nil
+	return s.db.Delete(&item).Error
 }
 
 func (s *Storage) GetCartItems(id int64) (*domain.CartItems, error) {
-	var cart domain.CartItems
-	res := s.db.First(&cart, id)
-	if res.Error != nil {
-		return nil, errors.New("This cart is not exist")
+	var item domain.CartItems
+	if err := s.db.First(&item, id).Error; err != nil {
+		return nil, err
 	}
-	return &cart, nil
+	return &item, nil
 }
 
 func (s *Storage) UpdateCartItem(cartItems *domain.CartItems) (*domain.CartItems, error) {

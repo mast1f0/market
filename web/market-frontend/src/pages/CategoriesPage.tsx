@@ -1,33 +1,28 @@
 import CategoriesGrid from "../widgets/CategoriesGrid.tsx";
 
-export default function CategoriesPage() {
-    const categories = [
-        {
-            id: 1,
-            name: "Электроника",
-            description: "Смартфоны, ноутбуки и вся электронная техника",
-        },
-        {
-            id: 2,
-            name: "Одежда",
-            description: "Футболки, джинсы, куртки и аксессуары",
-        },
-        {
-            id: 3,
-            name: "Книги",
-            description: "Художественная литература, учебники и комиксы",
-        },
-        {
-            id: 4,
-            name: "Игрушки",
-            description: "Для детей всех возрастов",
-        },
-        {
-            id: 5,
-            name: "Дом и сад",
-            description: "Мебель, декор, инструменты и растения",
-        },
-    ];
+const DEMO_CATEGORIES = [
+  {
+    id: 101,
+    name: "Электроника",
+    description: "Смартфоны, ноутбуки и техника для дома",
+  },
+  {
+    id: 102,
+    name: "Одежда",
+    description: "Одежда и аксессуары",
+  },
+  {
+    id: 103,
+    name: "Книги",
+    description: "Художественная и учебная литература",
+  },
+  {
+    id: 104,
+    name: "Дом и сад",
+    description: "Мебель, декор, инструменты",
+  },
+];
 
-    return <CategoriesGrid categories={categories} />;
+export default function CategoriesPage() {
+  return <CategoriesGrid fallbackCategories={DEMO_CATEGORIES} />;
 }

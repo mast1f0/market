@@ -1,170 +1,181 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
-	"market/internal/core/domain"
-	"market/internal/core/service"
+	"errors"
 	"net/http"
 	"strconv"
 
+	"market/internal/adapters/http/dto"
+	"market/internal/adapters/http/helpers"
+	"market/internal/core/service"
+
 	"github.com/go-chi/chi/v5"
+	"gorm.io/gorm"
 )
 
 type ProductHandler struct {
-	service *service.ProductService
+	products   *service.ProductService
+	categories *service.CategoryService
 }
 
-func NewProductHandler(s *service.ProductService) *ProductHandler {
-	return &ProductHandler{service: s}
+func NewProductHandler(products *service.ProductService, categories *service.CategoryService) *ProductHandler {
+	return &ProductHandler{products: products, categories: categories}
+}
+
+func (h *ProductHandler) categoryExists(categoryID uint) bool {
+	if categoryID == 0 {
+		return false
+	}
+	_, err := h.categories.GetCategory(int64(categoryID))
+	return err == nil
 }
 
 func (h *ProductHandler) GetAllProducts(w http.ResponseWriter, r *http.Request) {
-	products := h.service.GetAllProducts()
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(products)
+	products := h.products.GetAllProducts()
+	helpers.RespondJSON(w, http.StatusOK, products)
 }
 
 func (h *ProductHandler) AddProduct(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value("user_id").(int64)
 	if !ok {
-		http.Error(w, "cannot get user id", http.StatusUnauthorized)
-		return
-	}
-	var Product *domain.Product
-
-	err := json.NewDecoder(r.Body).Decode(&Product)
-	if err != nil {
-		http.Error(w, "Incorrect body", http.StatusBadRequest)
-		return
-	}
-	Product.OwnerID = userID
-	product, err := h.service.AddToProduct(Product)
-	if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("unable to add product"))
-		return
-	}
-	w.WriteHeader(http.StatusCreated)
-	w.Header().Set("Content-Type", "application/json")
-	jsonProduct, _ := json.Marshal(product)
-	_, err = w.Write(jsonProduct)
-	if err != nil {
+		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
 		return
 	}
 
+	var req dto.CreateProductRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.RespondError(w, http.StatusBadRequest, "invalid json body")
+		return
+	}
+	if err := req.Validate(); err != nil {
+		helpers.RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if !h.categoryExists(req.CategoryID) {
+		helpers.RespondError(w, http.StatusBadRequest, "unknown category_id")
+		return
+	}
+
+	product, err := h.products.AddToProduct(req.ToDomain(userID))
+	if err != nil {
+		helpers.RespondError(w, http.StatusBadRequest, "unable to add product")
+		return
+	}
+
+	helpers.RespondJSON(w, http.StatusCreated, product)
 }
 
 func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value("user_id").(int64)
 	if !ok {
-		http.Error(w, "cannot get user id", http.StatusUnauthorized)
+		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
 		return
 	}
 
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("invalid id"))
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil || id < 1 {
+		helpers.RespondError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
-	product, err := h.service.GetProductById(int64(id))
+
+	product, err := h.products.GetProductById(id)
 	if err != nil {
-		w.WriteHeader(400)
-		w.Write([]byte(err.Error()))
+		if errors.Is(err, gorm.ErrRecordNotFound) || helpers.HTTPStatusForDB(err) == http.StatusNotFound {
+			helpers.RespondError(w, http.StatusNotFound, "product not found")
+			return
+		}
+		helpers.RespondError(w, http.StatusInternalServerError, "failed to load product")
 		return
 	}
 
 	if product.OwnerID != userID {
-		w.WriteHeader(401)
-		w.Write([]byte("you are not the owner of this product"))
+		helpers.RespondError(w, http.StatusForbidden, "you are not the owner of this product")
 		return
 	}
-	productJson, err := json.Marshal(product)
-	if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("unable to get product"))
-		return
-	}
-	w.Write(productJson)
-	h.service.DeleteProduct(int64(id))
 
+	if err := h.products.DeleteProduct(id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			helpers.RespondError(w, http.StatusNotFound, "product not found")
+			return
+		}
+		helpers.RespondError(w, http.StatusInternalServerError, "failed to delete product")
+		return
+	}
+
+	helpers.RespondJSON(w, http.StatusNoContent, nil)
 }
 
 func (h *ProductHandler) PutProduct(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value("user_id").(int64)
 	if !ok {
-		http.Error(w, "cannot get user id", http.StatusUnauthorized)
+		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
 		return
 	}
 
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil || id < 1 {
+		helpers.RespondError(w, http.StatusBadRequest, "invalid id")
+		return
+	}
+
+	product, err := h.products.GetProductById(id)
 	if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("invalid id"))
+		if errors.Is(err, gorm.ErrRecordNotFound) || helpers.HTTPStatusForDB(err) == http.StatusNotFound {
+			helpers.RespondError(w, http.StatusNotFound, "product not found")
+			return
+		}
+		helpers.RespondError(w, http.StatusInternalServerError, "failed to load product")
 		return
 	}
 
-	product, _ := h.service.GetProductById(int64(id))
 	if product.OwnerID != userID {
-		w.WriteHeader(401)
-		w.Write([]byte("you are not the owner of this product"))
+		helpers.RespondError(w, http.StatusForbidden, "you are not the owner of this product")
 		return
 	}
-	var newProduct = &domain.Product{ID: (int64(id))}
-	err = json.NewDecoder(r.Body).Decode(&newProduct)
+
+	var req dto.UpdateProductRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.RespondError(w, http.StatusBadRequest, "invalid json body")
+		return
+	}
+	if err := req.Validate(); err != nil {
+		helpers.RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if !h.categoryExists(req.CategoryID) {
+		helpers.RespondError(w, http.StatusBadRequest, "unknown category_id")
+		return
+	}
+
+	req.ApplyTo(product)
+	product.ID = id
+
+	updated, err := h.products.UpdateProduct(product)
 	if err != nil {
-		http.Error(w, "Incorrect body", http.StatusBadRequest)
+		helpers.RespondError(w, http.StatusBadRequest, "unable to update product")
 		return
 	}
-	defer r.Body.Close()
-	productJson, err := json.Marshal(newProduct)
-	if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("unable to get product"))
-		return
-	}
-	w.Write(productJson)
-	h.service.UpdateProduct(newProduct)
+
+	helpers.RespondJSON(w, http.StatusOK, updated)
 }
 
 func (h *ProductHandler) GetProductById(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("invalid id"))
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil || id < 1 {
+		helpers.RespondError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
-	product, err := h.service.GetProductById(int64(id))
-	if err != nil {
-		w.WriteHeader(400)
-		w.Write([]byte(err.Error()))
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(product)
-}
 
-func (h *ProductHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
-	file, header, err := r.FormFile("image")
+	product, err := h.products.GetProductById(id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		if errors.Is(err, gorm.ErrRecordNotFound) || helpers.HTTPStatusForDB(err) == http.StatusNotFound {
+			helpers.RespondError(w, http.StatusNotFound, "product not found")
+			return
+		}
+		helpers.RespondError(w, http.StatusInternalServerError, "failed to load product")
 		return
 	}
-	defer file.Close()
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(file)
 
-	url, err := h.service.UploadImage(buf.Bytes(), header.Filename)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	w.Write([]byte(url))
+	helpers.RespondJSON(w, http.StatusOK, product)
 }

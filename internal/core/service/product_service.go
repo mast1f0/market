@@ -37,6 +37,6 @@ func (s *ProductService) GetProduct(id int64) (*domain.Product, error) {
 	return s.repository.GetProduct(id)
 }
 
-func (s *ProductService) UploadImage(data []byte, filename string) (string, error) {
-	return s.S3storage.UploadFile(filename, data)
+func (s *ProductService) UploadFile(location string, filename string) (string, error) {
+	return s.S3storage.UploadFile(location, filename)
 }

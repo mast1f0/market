@@ -12,7 +12,7 @@ func RoleMiddleware(allowedRoles ...string) func(http.Handler) http.Handler {
 				http.Error(w, "no role", http.StatusForbidden)
 				return
 			}
-			
+
 			for _, allowed := range allowedRoles {
 				if role == allowed {
 					next.ServeHTTP(w, r)

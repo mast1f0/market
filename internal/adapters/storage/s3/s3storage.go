@@ -1,43 +1,57 @@
 package s3
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
+	log "github.com/sirupsen/logrus"
 )
 
-type S3Client struct {
-	client *s3.Client
-	Bucket string
+type S3Storage struct {
+	Client *minio.Client
 }
 
-func NewS3Client(bucket string) *S3Client {
-	cfg, err := config.LoadDefaultConfig(context.TODO())
-	if err != nil {
-		panic("unable to load SDK config, " + err.Error())
-	}
-
-	client := s3.NewFromConfig(cfg)
-	return &S3Client{
-		Bucket: bucket,
-		client: client,
-	}
-}
-
-func (s *S3Client) UploadFile(filename string, data []byte) (string, error) {
-	_, err := s.client.PutObject(context.TODO(), &s3.PutObjectInput{
-		Bucket: &s.Bucket,
-		Key:    &filename,
-		Body:   bytes.NewReader(data),
+func NewS3Storage(endpoint, accessKeyID, secretAccessKey string) (*S3Storage, error) {
+	minioClient, err := minio.New(endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
+		Secure: true,
 	})
-
 	if err != nil {
-		return "", err
+		log.Debug(err)
+		return nil, err
 	}
+	return &S3Storage{Client: minioClient}, nil
+}
 
-	url := fmt.Sprintf("https://%s.s3.amazonaws.com/%s", s.Bucket, filename)
-	return url, nil
+func (s *S3Storage) MakeBucket(bucketName string, location string) error {
+	ctx := context.Background()
+	err := s.Client.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{Region: location})
+	if err != nil {
+		exists, err := s.Client.BucketExists(ctx, bucketName)
+		if err != nil {
+			return err
+		}
+		if exists {
+			log.Info(fmt.Sprintf("Bucket %s already exists", bucketName))
+			return nil
+		}
+		return err
+	}
+	log.Debug("Bucket created")
+	return nil
+}
+
+func (s *S3Storage) UploadFile(location string, filename string) (string, error) {
+	bucketName := "images"
+	ctx := context.Background()
+	_, err := s.Client.FPutObject(ctx, bucketName, location, filename, minio.PutObjectOptions{
+		ContentType: "application/octet-stream",
+	})
+	if err != nil {
+		log.Debug(err)
+	}
+	//ЗАГЛУШКА
+	return bucketName, err
 }

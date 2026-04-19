@@ -7,5 +7,24 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     dedupe: ['react', 'react-dom']
-  }
+  },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/api/, ''),
+      },
+      '/auth': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/auth/, ''),
+      },
+      '/minio': {
+        target: 'http://localhost:8082',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/minio/, ''),
+      },
+    },
+  },
 })
