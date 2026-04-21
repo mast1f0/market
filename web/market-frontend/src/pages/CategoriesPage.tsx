@@ -1,28 +1,10 @@
 import CategoriesGrid from "../widgets/CategoriesGrid.tsx";
-
-const DEMO_CATEGORIES = [
-  {
-    id: 101,
-    name: "Электроника",
-    description: "Смартфоны, ноутбуки и техника для дома",
-  },
-  {
-    id: 102,
-    name: "Одежда",
-    description: "Одежда и аксессуары",
-  },
-  {
-    id: 103,
-    name: "Книги",
-    description: "Художественная и учебная литература",
-  },
-  {
-    id: 104,
-    name: "Дом и сад",
-    description: "Мебель, декор, инструменты",
-  },
-];
+import {useNavigate} from "react-router-dom";
 
 export default function CategoriesPage() {
-  return <CategoriesGrid fallbackCategories={DEMO_CATEGORIES} />;
+  const navigate = useNavigate();
+  return (
+      <CategoriesGrid onCategoryClick={(category) => {
+        navigate(`/categories/${category.id}`) }} />
+  );
 }

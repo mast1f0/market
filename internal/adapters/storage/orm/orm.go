@@ -80,6 +80,15 @@ func (s *Storage) UpdateProduct(product *domain.Product) (*domain.Product, error
 	return product, nil
 }
 
+func (s *Storage) ProductsByCategory(id int) ([]domain.Product, error) {
+	var products []domain.Product
+	res := s.db.Where("category_id = ?", id).Find(&products)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return products, nil
+}
+
 func (s *Storage) CreateCategory(category *domain.Category) (*domain.Category, error) {
 	res := s.db.Create(&category)
 	if res.Error != nil {

@@ -34,3 +34,7 @@ func (s *CategoryService) GetCategoryByName(name string) *domain.Category {
 func (s *CategoryService) GetCategories() []domain.Category {
 	return s.repository.GetCategories()
 }
+
+func (s *CategoryService) GetCategoriesByCategoryID(id int) ([]domain.Product, error) {
+	return s.repository.ProductsByCategory(id)
+}

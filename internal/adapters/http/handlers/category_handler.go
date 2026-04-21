@@ -140,3 +140,20 @@ func (h *CategoryHandler) ListCategories(w http.ResponseWriter, r *http.Request)
 	categories := h.service.GetCategories()
 	helpers.RespondJSON(w, http.StatusOK, categories)
 }
+
+func (h *CategoryHandler) ListCategoriesByCategoryID(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 32)
+	if err != nil || id < 1 {
+		helpers.RespondError(w, http.StatusBadRequest, "invalid category id")
+		return
+	}
+	products, err := h.service.GetCategoriesByCategoryID(int(id))
+	if err != nil {
+		st := helpers.HTTPStatusForDB(err)
+		if st == http.StatusNotFound {
+			helpers.RespondError(w, http.StatusNotFound, "category not found")
+			return
+		}
+	}
+	helpers.RespondJSON(w, http.StatusOK, products)
+}

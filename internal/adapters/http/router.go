@@ -24,7 +24,7 @@ func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handl
 		r.Get("/products", productHandler.GetAllProducts)
 		r.Get("/products/{id}", productHandler.GetProductById)
 
-		r.Get("/categories/{id}", categoryHandler.GetCategory)
+		r.Get("/categories/{id}", categoryHandler.ListCategoriesByCategoryID)
 		r.Get("/categories", categoryHandler.ListCategories)
 	})
 

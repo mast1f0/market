@@ -11,4 +11,5 @@ type CategoryRepository interface {
 	GetCategory(id int64) (*domain.Category, error)
 	GetCategoryByName(name string) *domain.Category
 	GetCategories() []domain.Category
+	ProductsByCategory(id int) ([]domain.Product, error)
 }

@@ -10,6 +10,7 @@ import AddProductPage from "./pages/AddProductPage.tsx";
 import SellerPanel from "./widgets/SellerPanel.tsx";
 import ProductPage from "./pages/ProductPage.tsx";
 import LoginPage from "./pages/LoginPage.tsx";
+import CategoryPage from "./pages/CategoryPage.tsx";
 
 function App() {
   return (
@@ -21,7 +22,10 @@ function App() {
             <Routes>
               <Route path="/" element={<MainPage />} />
               <Route path="/about" element={<AboutPage />} />
+
               <Route path="/categories" element={<CategoriesPage />} />
+              <Route path="/categories/:id" element={<CategoryPage />} />
+
               <Route path="/profiles" element={<ProfilePage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/cart" element={<CartPage />} />
