@@ -133,74 +133,95 @@ func (s *Storage) GetCategoryByName(name string) *domain.Category {
 	return &category
 }
 
-func (s *Storage) CreateCart(cart *domain.Cart) (*domain.Cart, error) {
-	res := s.db.Create(&cart)
+// переделка корзины
+func (s *Storage) CreateCart(id int64) (*domain.Cart, error) {
+	var cart = &domain.Cart{
+		UserID: &id,
+		Status: "active",
+	}
+	res := s.db.Create(cart)
 	if res.Error != nil {
-		return nil, errors.New("Не удалось создать корзину")
+		return nil, errors.New(res.Error.Error())
 	}
 	return cart, nil
 }
 
-func (s *Storage) UpdateCart(cart *domain.Cart) (*domain.Cart, error) {
-	res := s.db.Save(&cart)
-	if res.Error != nil {
-		return nil, res.Error
-	}
-	return cart, nil
-}
-
-func (s *Storage) DeleteCart(userID int64) error {
+func (s *Storage) GetCartWithItems(userID int64) (*domain.Cart, error) {
 	var cart domain.Cart
-	if err := s.db.Where("user_id = ?", userID).First(&cart).Error; err != nil {
-		return err
-	}
-	return s.db.Delete(&cart).Error
-}
-
-func (s *Storage) GetCart(userID int64) (*domain.Cart, error) {
-	var cart domain.Cart
-	if err := s.db.Where("user_id = ?", userID).First(&cart).Error; err != nil {
-		return nil, err
+	err := s.db.Preload("Items").Where("user_id = ? AND status = ?", userID, "active").First(&cart).Error
+	if err != nil {
+		cart, err := s.CreateCart(userID)
+		if err != nil {
+			return nil, err
+		}
+		return cart, nil
 	}
 	return &cart, nil
 }
 
-func (s *Storage) GetCartByID(id int64) (*domain.Cart, error) {
-	var cart domain.Cart
-	if err := s.db.First(&cart, id).Error; err != nil {
+func (s *Storage) FindCartItem(cartID, productID int64) (*domain.CartItem, error) {
+	var item domain.CartItem
+
+	err := s.db.
+		Where("cart_id = ? AND product_id = ?", cartID, productID).
+		First(&item).Error
+
+	if err != nil {
 		return nil, err
 	}
-	return &cart, nil
-}
 
-func (s *Storage) AddCartItem(cartItems *domain.CartItems) (*domain.CartItems, error) {
-	res := s.db.Create(&cartItems)
-	if res.Error != nil {
-		return nil, res.Error
-	}
-	return cartItems, nil
-}
-
-func (s *Storage) DeleteCartItem(id int64) error {
-	var item domain.CartItems
-	if err := s.db.First(&item, id).Error; err != nil {
-		return err
-	}
-	return s.db.Delete(&item).Error
-}
-
-func (s *Storage) GetCartItems(id int64) (*domain.CartItems, error) {
-	var item domain.CartItems
-	if err := s.db.First(&item, id).Error; err != nil {
-		return nil, err
-	}
 	return &item, nil
 }
 
-func (s *Storage) UpdateCartItem(cartItems *domain.CartItems) (*domain.CartItems, error) {
-	res := s.db.Save(&cartItems)
+func (s *Storage) DeleteCartItem(userId int64, productId int64) error {
+	return s.db.Delete(&domain.CartItem{}, "user_id = ? AND product_id = ?", userId, productId).Error
+}
+
+func (s *Storage) UpdateCartItem(cartItems *domain.CartItem) (*domain.CartItem, error) {
+	res := s.db.Save(cartItems)
 	if res.Error != nil {
 		return nil, res.Error
 	}
 	return cartItems, nil
+}
+
+func (s *Storage) AddCartItem(userId int64, cartItem *domain.CartItem) (*domain.CartItem, error) {
+	var cart domain.Cart
+	err := s.db.
+		Where("user_id = ? AND status = ?", userId, "active").
+		First(&cart).Error
+
+	if err != nil {
+		cart = domain.Cart{
+			UserID: &userId,
+			Status: "active",
+		}
+
+		if err := s.db.Create(&cart).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	var existingItem domain.CartItem
+	err = s.db.
+		Where("cart_id = ? AND product_id = ?", cart.ID, cartItem.ProductID).
+		First(&existingItem).Error
+
+	if err == nil {
+		existingItem.Quantity += cartItem.Quantity
+
+		if err := s.db.Save(&existingItem).Error; err != nil {
+			return nil, err
+		}
+
+		return &existingItem, nil
+	}
+
+	cartItem.CartID = cart.ID
+
+	if err := s.db.Create(cartItem).Error; err != nil {
+		return nil, err
+	}
+
+	return cartItem, nil
 }

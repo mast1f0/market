@@ -13,21 +13,24 @@ func NewCartService(cartRepo ports.CartRepository) *CartService {
 	return &CartService{repo: cartRepo}
 }
 
-func (s *CartService) GetCart(userID int64) (*domain.Cart, error) {
-	return s.repo.GetCart(userID)
+func (s *CartService) GetCartWithItems(userID int64) (*domain.Cart, error) {
+	return s.repo.GetCartWithItems(userID)
+}
+func (s *CartService) FindCartItem(cartID, productID int64) (*domain.CartItem, error) {
+	return s.repo.FindCartItem(cartID, productID)
 }
 
-func (s *CartService) GetCartByID(id int64) (*domain.Cart, error) {
-	return s.repo.GetCartByID(id)
+func (s *CartService) DeleteCartItem(userId int64, productId int64) error {
+	return s.repo.DeleteCartItem(userId, productId)
 }
 
-func (s *CartService) UpdateCart(cart *domain.Cart) (*domain.Cart, error) {
-	return s.repo.UpdateCart(cart)
+func (s *CartService) UpdateCartItem(cartItems *domain.CartItem) (*domain.CartItem, error) {
+	return s.repo.UpdateCartItem(cartItems)
 }
-func (s *CartService) CreateCart(cart *domain.Cart) (*domain.Cart, error) {
-	return s.repo.CreateCart(cart)
+func (s *CartService) CreateCart(cartID int64) (*domain.Cart, error) {
+	return s.repo.CreateCart(cartID)
 }
 
-func (s *CartService) DeleteCart(userID int64) error {
-	return s.repo.DeleteCart(userID)
+func (s *CartService) AddCartItem(userID int64, cartItem *domain.CartItem) (*domain.CartItem, error) {
+	return s.repo.AddCartItem(userID, cartItem)
 }

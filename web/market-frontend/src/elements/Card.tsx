@@ -7,35 +7,65 @@ interface ProductCardProps {
   price: number;
   imageUrl: string;
   onClick?: () => void;
+  onAddToCart?: () => void;
 }
 
-export default function ProductCard({ name, description, price, imageUrl, onClick }: ProductCardProps) {
+export default function ProductCard({
+                                      name,
+                                      description,
+                                      price,
+                                      imageUrl,
+                                      onClick,
+                                      onAddToCart,
+                                    }: ProductCardProps) {
   const excerpt =
-    description.length > 100 ? `${description.slice(0, 100).trim()}…` : description;
+      description.length > 100
+          ? `${description.slice(0, 100).trim()}…`
+          : description;
 
   return (
-    <article
-      role="button"
-      tabIndex={0}
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onClick?.();
-        }
-      }}
-      className="cursor-pointer max-w-xs bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md hover:border-slate-200 transition-all duration-200"
-    >
-      <ResolvedImage
-        imageRef={imageUrl}
-        className="w-full h-48 object-cover bg-slate-100 pointer-events-none"
-      />
+      <article
+          role="button"
+          tabIndex={0}
+          onClick={onClick}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onClick?.();
+            }
+          }}
+          className="cursor-pointer max-w-xs bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md hover:border-slate-200 transition-all duration-200"
+      >
+        <ResolvedImage
+            imageRef={imageUrl}
+            className="w-full h-48 object-cover bg-slate-100 pointer-events-none"
+        />
 
-      <div className="p-4">
-        <h2 className="text-lg font-semibold text-slate-800 leading-snug">{name}</h2>
-        {excerpt ? <p className="text-slate-600 mt-2 text-sm max-h-[4.5rem] overflow-hidden">{excerpt}</p> : null}
-        <p className="text-emerald-700 font-semibold mt-4 text-lg">{formatRub(price)}</p>
-      </div>
-    </article>
+        <div className="p-4">
+          <h2 className="text-lg font-semibold text-slate-800 leading-snug">
+            {name}
+          </h2>
+
+          {excerpt ? (
+              <p className="text-slate-600 mt-2 text-sm max-h-[4.5rem] overflow-hidden">
+                {excerpt}
+              </p>
+          ) : null}
+
+          <p className="text-emerald-700 font-semibold mt-4 text-lg">
+            {formatRub(price)}
+          </p>
+
+          <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddToCart?.();
+              }}
+              className="mt-4 w-full py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors"
+          >
+            В корзину
+          </button>
+        </div>
+      </article>
   );
 }

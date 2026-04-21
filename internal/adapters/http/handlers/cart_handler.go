@@ -2,36 +2,19 @@ package handlers
 
 import (
 	"encoding/json"
+	"market/internal/adapters/http/dto"
 	"net/http"
 
-	"market/internal/adapters/http/dto"
 	"market/internal/adapters/http/helpers"
-	"market/internal/core/domain"
 	"market/internal/core/service"
 )
 
 type CartHandler struct {
-	repo *service.CartService
+	service *service.CartService
 }
 
-func NewCartHandler(repo *service.CartService) *CartHandler {
-	return &CartHandler{repo: repo}
-}
-
-func (h *CartHandler) CreateCart(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(int64)
-	if !ok {
-		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
-		return
-	}
-
-	newCart, err := h.repo.CreateCart(&domain.Cart{UserId: userID})
-	if err != nil {
-		helpers.RespondError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	helpers.RespondJSON(w, http.StatusCreated, newCart)
+func NewCartHandler(service *service.CartService) *CartHandler {
+	return &CartHandler{service: service}
 }
 
 func (h *CartHandler) GetCart(w http.ResponseWriter, r *http.Request) {
@@ -41,10 +24,14 @@ func (h *CartHandler) GetCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cart, err := h.repo.GetCart(userID)
+	cart, err := h.service.GetCartWithItems(userID)
 	if err != nil {
 		if helpers.HTTPStatusForDB(err) == http.StatusNotFound {
-			helpers.RespondError(w, http.StatusNotFound, "cart not found")
+			cart, err := h.service.CreateCart(userID)
+			if err != nil {
+				helpers.RespondError(w, http.StatusBadRequest, err.Error())
+			}
+			helpers.RespondJSON(w, http.StatusCreated, cart)
 			return
 		}
 		helpers.RespondError(w, http.StatusInternalServerError, "failed to load cart")
@@ -54,53 +41,42 @@ func (h *CartHandler) GetCart(w http.ResponseWriter, r *http.Request) {
 	helpers.RespondJSON(w, http.StatusOK, cart)
 }
 
-func (h *CartHandler) UpdateCart(w http.ResponseWriter, r *http.Request) {
+func (h *CartHandler) AddItem(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value("user_id").(int64)
 	if !ok {
 		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
 		return
 	}
-
-	cart, err := h.repo.GetCart(userID)
-	if err != nil {
-		if helpers.HTTPStatusForDB(err) == http.StatusNotFound {
-			helpers.RespondError(w, http.StatusNotFound, "cart not found")
-			return
-		}
-		helpers.RespondError(w, http.StatusInternalServerError, "failed to load cart")
-		return
-	}
-
-	var req dto.UpdateCartRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		helpers.RespondError(w, http.StatusBadRequest, "invalid json body")
-		return
-	}
-
-	updated, err := h.repo.UpdateCart(cart)
+	var req dto.AddCartItemRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	helpers.RespondJSON(w, http.StatusOK, updated)
+	newItem, err := h.service.AddCartItem(userID, req.ToDomain())
+	if err != nil {
+		helpers.RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	helpers.RespondJSON(w, http.StatusCreated, newItem)
 }
-
-func (h *CartHandler) DeleteCart(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(int64)
+func (h *CartHandler) RemoveItem(w http.ResponseWriter, r *http.Request) {
+	userId, ok := r.Context().Value("user_id").(int64)
 	if !ok {
 		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
 		return
 	}
-
-	if err := h.repo.DeleteCart(userID); err != nil {
-		if helpers.HTTPStatusForDB(err) == http.StatusNotFound {
-			helpers.RespondError(w, http.StatusNotFound, "cart not found")
-			return
-		}
-		helpers.RespondError(w, http.StatusInternalServerError, "failed to delete cart")
+	var item dto.RemoveCartItemRequest
+	err := json.NewDecoder(r.Body).Decode(&item)
+	if err != nil {
+		helpers.RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-
-	helpers.RespondJSON(w, http.StatusNoContent, nil)
+	err = h.service.DeleteCartItem(userId, item.ProductID)
+	if err != nil {
+		helpers.RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	helpers.RespondJSON(w, http.StatusOK, item)
 }

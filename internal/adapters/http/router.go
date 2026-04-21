@@ -9,7 +9,7 @@ import (
 	"github.com/go-chi/cors"
 )
 
-func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handlers.CategoryHandler, cartHandler *handlers.CartHandler, CartItemsHandler *handlers.CartItemsHandler, jwt *jwtutil.Manager) *chi.Mux { //, CategoryHandler *handlers.CategoryHandler
+func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handlers.CategoryHandler, cartHandler *handlers.CartHandler, jwt *jwtutil.Manager) *chi.Mux { //, CategoryHandler *handlers.CategoryHandler
 	r := chi.NewRouter()
 
 	r.Use(cors.Handler(cors.Options{
@@ -47,14 +47,8 @@ func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handl
 		r.Group(func(r chi.Router) {
 			r.Use(middlware.RoleMiddleware("buyer", "seller", "admin"))
 			r.Get("/cart", cartHandler.GetCart)
-			r.Post("/cart", cartHandler.CreateCart)
-			r.Put("/cart", cartHandler.UpdateCart)
-			r.Delete("/cart", cartHandler.DeleteCart)
-
-			r.Get("/cartsItems/{id}", CartItemsHandler.GetCartItems)
-			r.Post("/cartsItems/{id}", CartItemsHandler.AddItemCart)
-			r.Delete("/cartsItems/{id}", CartItemsHandler.DeleteItemCart)
-			r.Put("/cartsItems/{id}", CartItemsHandler.UpdateCartItem)
+			r.Post("/cart/items", cartHandler.AddItem)
+			r.Delete("/cart/items/{id}", cartHandler.RemoveItem)
 		})
 	})
 

@@ -24,15 +24,13 @@ func main() {
 	productService := service.NewProductService(repo)
 	categoryService := service.NewCategoryService(repo)
 	cartService := service.NewCartService(repo)
-	cartItemsService := service.NewCartItemsService(repo)
 
 	productHandler := handlers.NewProductHandler(productService, categoryService)
 	categoryHandler := handlers.NewCategoryHandler(categoryService)
 	cartHandler := handlers.NewCartHandler(cartService)
-	cartItemsHandler := handlers.NewCartItemsHandler(cartItemsService, cartService)
 
 	jwt := jwtutil.Manager{Secret: []byte("superSecret")}
-	router := http2.SetupRoutes(productHandler, categoryHandler, cartHandler, cartItemsHandler, &jwt)
+	router := http2.SetupRoutes(productHandler, categoryHandler, cartHandler, &jwt)
 	srv := http2.NewServer(router)
 	srv.Start()
 }

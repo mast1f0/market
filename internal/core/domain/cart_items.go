@@ -1,8 +1,15 @@
 package domain
 
-type CartItems struct {
-	Id        int64 `gorm:"primaryKey" json:"id,omitempty"`
-	CartId    int64 `gorm:"not null;index" json:"cart_id"`
-	ProductId int64 `gorm:"not null" json:"product_id"`
-	Quantity  int   `gorm:"not null" json:"quantity"`
+import "time"
+
+type CartItem struct {
+	ID        int64 `json:"id"`
+	CartID    int64 `json:"cart_id"`
+	ProductID int64 `json:"product_id"`
+	Quantity  int   `json:"quantity"`
+
+	PriceSnapshot float64 `json:"price_snapshot"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
