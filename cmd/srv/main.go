@@ -6,7 +6,6 @@ import (
 	"market/internal/adapters/http/handlers"
 	jwtutil "market/internal/adapters/jwt"
 	"market/internal/adapters/storage/orm"
-	s3storage "market/internal/adapters/storage/s3"
 	"market/internal/core/service"
 	"market/internal/engine/logger"
 	seed2 "market/internal/engine/seed"
@@ -22,15 +21,7 @@ func main() {
 		seed2.SeedCategories(repo)
 		seed2.SeedProducts(repo)
 	}
-
-	endpoint := "play.min.io"
-	accessKeyID := "Q3AM3UQ867SPQQA43P2F"
-	secretAccessKey := "zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG"
-	s3, err := s3storage.NewS3Storage(endpoint, accessKeyID, secretAccessKey)
-	if err != nil {
-		panic(err)
-	}
-	productService := service.NewProductService(repo, s3)
+	productService := service.NewProductService(repo)
 	categoryService := service.NewCategoryService(repo)
 	cartService := service.NewCartService(repo)
 	cartItemsService := service.NewCartItemsService(repo)
