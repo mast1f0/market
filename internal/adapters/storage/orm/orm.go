@@ -100,7 +100,7 @@ func (s *Storage) CreateCategory(category *domain.Category) (*domain.Category, e
 func (s *Storage) UpdateCategory(category *domain.Category) (*domain.Category, error) {
 	res := s.db.Save(&category)
 	if res.Error != nil {
-		return nil, errors.New("Не удалось обновить")
+		return nil, errors.New("не удалось обновить")
 	}
 	return category, nil
 }
@@ -133,7 +133,6 @@ func (s *Storage) GetCategoryByName(name string) *domain.Category {
 	return &category
 }
 
-// переделка корзины
 func (s *Storage) CreateCart(id int64) (*domain.Cart, error) {
 	var cart = &domain.Cart{
 		UserID: &id,
@@ -148,7 +147,7 @@ func (s *Storage) CreateCart(id int64) (*domain.Cart, error) {
 
 func (s *Storage) GetCartWithItems(userID int64) (*domain.Cart, error) {
 	var cart domain.Cart
-	err := s.db.Preload("Items").Where("user_id = ? AND status = ?", userID, "active").First(&cart).Error
+	err := s.db.Preload("Items.Product").Where("user_id = ? AND status = ?", userID, "active").First(&cart).Error
 	if err != nil {
 		cart, err := s.CreateCart(userID)
 		if err != nil {

@@ -5,7 +5,7 @@ MIGRATIONS_PATH=./migrations
 
 .PHONY: run migrate-up migrate-down migrate-reset env-generate create-db
 
-run:
+run-dev:
 	go run cmd/srv/main.go
 migrate-up:
 	migrate -database "$(DB_URL)" -path $(MIGRATIONS_PATH) up

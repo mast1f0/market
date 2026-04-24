@@ -6,15 +6,16 @@ import { formatRub } from "../lib/format.ts";
 interface CartItemDTO {
   id: number;
   product_id: number;
-  name: string;
-  price: number;
   quantity: number;
+
+  price: number;
+  name: string;
   image_url: string;
 }
 
 interface CartDTO {
   id: number;
-  items?: CartItemDTO[]; // 🔥 ВАЖНО: optional
+  items: CartItemDTO[];
 }
 
 export default function CartPage() {
@@ -27,17 +28,45 @@ export default function CartPage() {
 
     (async () => {
       try {
-        const data = await fetchJson<CartDTO>(
+        const raw = await fetchJson<Record<string, any>>(
             "/cart",
             undefined,
             { auth: true }
         );
 
+        const normalized: CartDTO = {
+          id: raw.id ?? raw.ID,
+          items: (raw.items ?? raw.Items ?? []).map((item: any) => ({
+            id: item.id ?? item.ID,
+            product_id: item.product_id ?? item.ProductID,
+            quantity: item.quantity ?? item.Quantity,
+
+            price:
+                item.price ??
+                item.price_snapshot ??
+                item.PriceSnapshot ??
+                item.product?.price ??
+                item.Product?.price ??
+                0,
+
+            name:
+                item.name ??
+                item.product?.name ??
+                item.Product?.name ??
+                item.Product?.Name ??
+                "Без названия",
+
+            image_url:
+                item.image_url ??
+                item.product?.image_url ??
+                item.Product?.image_url ??
+                item.Product?.ImageURL ??
+                "",
+          })),
+        };
+
         if (!cancelled) {
-          setCart({
-            ...data,
-            items: data.items ?? [], // 🔥 НОРМАЛИЗАЦИЯ
-          });
+          setCart(normalized);
           setError(null);
         }
       } catch (e) {
@@ -54,7 +83,7 @@ export default function CartPage() {
     };
   }, []);
 
-  const items = cart?.items ?? []; // 🔥 защита
+  const items = cart?.items ?? [];
 
   const handleRemove = (id: number) => {
     setCart((prev) => {
@@ -89,10 +118,6 @@ export default function CartPage() {
     return (
         <div className="max-w-3xl mx-auto p-6 md:p-8">
           <div className="h-8 w-40 bg-slate-200 rounded animate-pulse mb-6" />
-          <div className="space-y-4">
-            <div className="h-20 bg-slate-100 rounded animate-pulse" />
-            <div className="h-20 bg-slate-100 rounded animate-pulse" />
-          </div>
         </div>
     );
   }
@@ -145,10 +170,7 @@ export default function CartPage() {
           </span>
         </span>
 
-          <button
-              type="button"
-              className="px-6 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors"
-          >
+          <button className="px-6 py-2.5 rounded-lg bg-emerald-600 text-white">
             Оформить заказ
           </button>
         </div>
