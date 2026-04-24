@@ -49,6 +49,7 @@ func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handl
 			r.Get("/cart", cartHandler.GetCart)
 			r.Post("/cart/items", cartHandler.AddItem)
 			r.Delete("/cart/items", cartHandler.RemoveItem)
+			r.Put("/cart/items", cartHandler.UpdateItem)
 		})
 	})
 

@@ -24,8 +24,8 @@ func (s *CartService) DeleteCartItem(userId int64, productId int64) error {
 	return s.repo.DeleteCartItem(userId, productId)
 }
 
-func (s *CartService) UpdateCartItem(cartItems *domain.CartItem) (*domain.CartItem, error) {
-	return s.repo.UpdateCartItem(cartItems)
+func (s *CartService) UpdateCartItem(itemId int64, quantity int) (*domain.CartItem, error) {
+	return s.repo.UpdateCartItem(itemId, quantity)
 }
 func (s *CartService) CreateCart(cartID int64) (*domain.Cart, error) {
 	return s.repo.CreateCart(cartID)

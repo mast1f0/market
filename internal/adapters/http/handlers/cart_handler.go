@@ -72,3 +72,18 @@ func (h *CartHandler) RemoveItem(w http.ResponseWriter, r *http.Request) {
 	}
 	helpers.RespondJSON(w, http.StatusOK, item)
 }
+
+func (h *CartHandler) UpdateItem(w http.ResponseWriter, r *http.Request) {
+	var req dto.UpdateCartItemRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		helpers.RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	newCart, err := h.service.UpdateCartItem(req.ItemID, req.Quantity)
+	if err != nil {
+		helpers.RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	helpers.RespondJSON(w, http.StatusOK, newCart)
+}

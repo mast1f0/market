@@ -188,12 +188,18 @@ func (s *Storage) DeleteCartItem(userId int64, itemId int64) error {
 		Delete(&domain.CartItem{}).Error
 }
 
-func (s *Storage) UpdateCartItem(cartItems *domain.CartItem) (*domain.CartItem, error) {
-	res := s.db.Save(cartItems)
+func (s *Storage) UpdateCartItem(itemId int64, quantity int) (*domain.CartItem, error) {
+	var item domain.CartItem
+	res := s.db.Find(&item, itemId)
 	if res.Error != nil {
 		return nil, res.Error
 	}
-	return cartItems, nil
+	item.Quantity = quantity
+	err := s.db.Save(&item).Error
+	if err != nil {
+		return &item, err
+	}
+	return &item, nil
 }
 
 func (s *Storage) AddCartItem(userId int64, cartItem *domain.CartItem) (*domain.CartItem, error) {

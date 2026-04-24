@@ -1,14 +1,19 @@
 import { useEffect, useState } from "react";
 import CartItem from "../elements/CartItem.tsx";
-import { fetchJson } from "../lib/api.ts";
 import { formatRub } from "../lib/format.ts";
-import {marketApiUrl} from "../lib/endpoints.ts";
+import { marketApiUrl } from "../lib/endpoints.ts";
+
+// interface ProductDTO {
+//   id: number;
+//   name: string;
+//   price: number;
+//   image_url: string;
+// }
 
 interface CartItemDTO {
   id: number;
   product_id: number;
   quantity: number;
-
   price: number;
   name: string;
   image_url: string;
@@ -19,21 +24,28 @@ interface CartDTO {
   items: CartItemDTO[];
 }
 
+const token = () => localStorage.getItem("market_access_token");
+
 export default function CartPage() {
   const [cart, setCart] = useState<CartDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // ===================== LOAD CART =====================
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
       try {
-        const raw = await fetchJson<Record<string, any>>(
-            "/cart",
-            undefined,
-            { auth: true }
-        );
+        const res = await fetch(marketApiUrl("/cart"), {
+          headers: {
+            Authorization: `Bearer ${token()}`,
+          },
+        });
+
+        if (!res.ok) throw new Error(await res.text());
+
+        const raw = await res.json();
 
         const normalized: CartDTO = {
           id: raw.id ?? raw.ID,
@@ -68,7 +80,6 @@ export default function CartPage() {
 
         if (!cancelled) {
           setCart(normalized);
-          setError(null);
         }
       } catch (e) {
         if (!cancelled) {
@@ -86,56 +97,83 @@ export default function CartPage() {
 
   const items = cart?.items ?? [];
 
+  // ===================== DELETE ITEM =====================
   const handleRemove = async (id: number) => {
+    const prev = cart;
     const item = cart?.items.find((i) => i.id === id);
     if (!item) return;
 
-    try {
-      await fetch(
-          marketApiUrl("/cart/items"),
-          {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization":`Bearer ${localStorage.getItem("market_access_token")}`,
-            },
-            body: JSON.stringify({
-              item_id: item.id, // ✅ ВАЖНО
-            }),
-          },
-      );
+    // optimistic UI
+    setCart((p) =>
+        p
+            ? { ...p, items: p.items.filter((i) => i.id !== id) }
+            : p
+    );
 
-      setCart((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          items: (prev.items ?? []).filter((i) => i.id !== id),
-        };
+    try {
+      const res = await fetch(marketApiUrl("/cart/items"), {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token()}`,
+        },
+        body: JSON.stringify({
+          item_id: item.id,
+        }),
       });
+
+      if (!res.ok) throw new Error(await res.text());
     } catch (e) {
       console.error("Remove failed", e);
+      setCart(prev); // rollback
     }
   };
 
-  const handleChangeQuantity = (id: number, newQuantity: number) => {
+  // ===================== UPDATE QUANTITY =====================
+  const handleChangeQuantity = async (id: number, newQuantity: number) => {
     if (newQuantity < 1) return;
 
-    setCart((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        items: (prev.items ?? []).map((i) =>
-            i.id === id ? { ...i, quantity: newQuantity } : i
-        ),
-      };
-    });
+    const prev = cart;
+
+    // optimistic update
+    setCart((p) =>
+        p
+            ? {
+              ...p,
+              items: p.items.map((i) =>
+                  i.id === id ? { ...i, quantity: newQuantity } : i
+              ),
+            }
+            : p
+    );
+
+    try {
+      const res = await fetch("http://localhost:8080/cart/items", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token()}`,
+        },
+        body: JSON.stringify({
+          item_id: id,
+          quantity: newQuantity,
+        }),
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+    } catch (e) {
+      console.error("Update failed", e);
+      setCart(prev); // rollback
+    }
   };
 
+  // ===================== TOTAL =====================
   const totalPrice = items.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
   );
 
+  // ===================== UI STATES =====================
   if (loading) {
     return (
         <div className="max-w-3xl mx-auto p-6 md:p-8">
@@ -163,6 +201,7 @@ export default function CartPage() {
     );
   }
 
+  // ===================== RENDER =====================
   return (
       <div className="max-w-3xl mx-auto p-6 md:p-8">
         <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">
@@ -192,7 +231,7 @@ export default function CartPage() {
           </span>
         </span>
 
-          <button className="px-6 py-2.5 rounded-lg bg-emerald-600 text-white">
+          <button className="px-6 py-2.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition">
             Оформить заказ
           </button>
         </div>

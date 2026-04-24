@@ -8,7 +8,8 @@ type AddCartItemRequest struct {
 }
 
 type UpdateCartItemRequest struct {
-	Quantity int `json:"quantity"`
+	ItemID   int64 `json:"item_id"`
+	Quantity int   `json:"quantity"`
 }
 
 type RemoveCartItemRequest struct {

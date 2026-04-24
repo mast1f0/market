@@ -8,6 +8,6 @@ type CartRepository interface {
 
 	FindCartItem(cartID, productID int64) (*domain.CartItem, error)
 	DeleteCartItem(userId int64, productId int64) error
-	UpdateCartItem(cartItems *domain.CartItem) (*domain.CartItem, error)
+	UpdateCartItem(itemId int64, quantity int) (*domain.CartItem, error)
 	AddCartItem(userId int64, cartItem *domain.CartItem) (*domain.CartItem, error)
 }
