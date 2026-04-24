@@ -12,7 +12,7 @@ type UpdateCartItemRequest struct {
 }
 
 type RemoveCartItemRequest struct {
-	ProductID int64 `json:"product_id"`
+	ItemID int64 `json:"item_id"`
 }
 
 func (r *AddCartItemRequest) ToDomain() *domain.CartItem {

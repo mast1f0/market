@@ -48,7 +48,7 @@ func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handl
 			r.Use(middlware.RoleMiddleware("buyer", "seller", "admin"))
 			r.Get("/cart", cartHandler.GetCart)
 			r.Post("/cart/items", cartHandler.AddItem)
-			r.Delete("/cart/items/{id}", cartHandler.RemoveItem)
+			r.Delete("/cart/items", cartHandler.RemoveItem)
 		})
 	})
 

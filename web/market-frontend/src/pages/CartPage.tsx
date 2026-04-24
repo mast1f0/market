@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import CartItem from "../elements/CartItem.tsx";
 import { fetchJson } from "../lib/api.ts";
 import { formatRub } from "../lib/format.ts";
+import {marketApiUrl} from "../lib/endpoints.ts";
 
 interface CartItemDTO {
   id: number;
@@ -85,14 +86,35 @@ export default function CartPage() {
 
   const items = cart?.items ?? [];
 
-  const handleRemove = (id: number) => {
-    setCart((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        items: (prev.items ?? []).filter((i) => i.id !== id),
-      };
-    });
+  const handleRemove = async (id: number) => {
+    const item = cart?.items.find((i) => i.id === id);
+    if (!item) return;
+
+    try {
+      await fetch(
+          marketApiUrl("/cart/items"),
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization":`Bearer ${localStorage.getItem("market_access_token")}`,
+            },
+            body: JSON.stringify({
+              item_id: item.id, // ✅ ВАЖНО
+            }),
+          },
+      );
+
+      setCart((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          items: (prev.items ?? []).filter((i) => i.id !== id),
+        };
+      });
+    } catch (e) {
+      console.error("Remove failed", e);
+    }
   };
 
   const handleChangeQuantity = (id: number, newQuantity: number) => {

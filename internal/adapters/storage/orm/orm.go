@@ -172,8 +172,20 @@ func (s *Storage) FindCartItem(cartID, productID int64) (*domain.CartItem, error
 	return &item, nil
 }
 
-func (s *Storage) DeleteCartItem(userId int64, productId int64) error {
-	return s.db.Delete(&domain.CartItem{}, "user_id = ? AND product_id = ?", userId, productId).Error
+func (s *Storage) DeleteCartItem(userId int64, itemId int64) error {
+	var cart domain.Cart
+
+	err := s.db.
+		Where("user_id = ? AND status = ?", userId, "active").
+		First(&cart).Error
+
+	if err != nil {
+		return err
+	}
+
+	return s.db.
+		Where("cart_id = ? AND id = ?", cart.ID, itemId).
+		Delete(&domain.CartItem{}).Error
 }
 
 func (s *Storage) UpdateCartItem(cartItems *domain.CartItem) (*domain.CartItem, error) {

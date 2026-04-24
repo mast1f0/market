@@ -65,7 +65,7 @@ func (h *CartHandler) RemoveItem(w http.ResponseWriter, r *http.Request) {
 		helpers.RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	err = h.service.DeleteCartItem(userId, item.ProductID)
+	err = h.service.DeleteCartItem(userId, item.ItemID)
 	if err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, err.Error())
 		return
