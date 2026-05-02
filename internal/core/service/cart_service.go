@@ -34,3 +34,7 @@ func (s *CartService) CreateCart(cartID int64) (*domain.Cart, error) {
 func (s *CartService) AddCartItem(userID int64, cartItem *domain.CartItem) (*domain.CartItem, error) {
 	return s.repo.AddCartItem(userID, cartItem)
 }
+
+func (s *CartService) ClearCart(userID int64) error {
+	return s.repo.ClearCart(userID)
+}

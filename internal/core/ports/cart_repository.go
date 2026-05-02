@@ -5,6 +5,7 @@ import "market/internal/core/domain"
 type CartRepository interface {
 	CreateCart(id int64) (*domain.Cart, error)
 	GetCartWithItems(userID int64) (*domain.Cart, error)
+	ClearCart(userId int64) error
 
 	FindCartItem(cartID, productID int64) (*domain.CartItem, error)
 	DeleteCartItem(userId int64, productId int64) error

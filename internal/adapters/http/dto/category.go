@@ -3,8 +3,6 @@ package dto
 import (
 	"errors"
 	"strings"
-
-	"market/internal/core/domain"
 )
 
 type CreateCategoryRequest struct {
@@ -16,10 +14,6 @@ func (r *CreateCategoryRequest) Validate() error {
 		return errors.New("name is required")
 	}
 	return nil
-}
-
-func (r *CreateCategoryRequest) ToDomain() *domain.Category {
-	return &domain.Category{Name: strings.TrimSpace(r.Name)}
 }
 
 type UpdateCategoryRequest struct {

@@ -17,7 +17,7 @@ func (s *CategoryService) GetCategory(id int64) (*domain.Category, error) {
 	return s.repository.GetCategory(id)
 }
 
-func (s *CategoryService) CreateCategory(category *domain.Category) (*domain.Category, error) {
+func (s *CategoryService) CreateCategory(category string) (*domain.Category, error) {
 	return s.repository.CreateCategory(category)
 }
 

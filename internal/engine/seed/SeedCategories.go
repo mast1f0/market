@@ -6,7 +6,7 @@ import (
 	"market/internal/core/domain"
 )
 
-func SeedCategories(db *orm.Storage) {
+func SeedCategories(db *orm.CategoryRepository) {
 	categories := []domain.Category{
 		{Name: "Электроника"},
 		{Name: "Одежда"},
@@ -17,7 +17,7 @@ func SeedCategories(db *orm.Storage) {
 	}
 
 	for _, c := range categories {
-		_, err := db.CreateCategory(&c)
+		_, err := db.CreateCategory(c.Name)
 		if err != nil {
 			log.Println(err)
 		}

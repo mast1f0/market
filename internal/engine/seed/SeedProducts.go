@@ -6,9 +6,9 @@ import (
 	"math/rand"
 )
 
-func SeedProducts(db *orm.Storage) {
+func SeedProducts(productRepo *orm.ProductRepository, categoryRepo *orm.CategoryRepository) {
 
-	categories := db.GetCategories()
+	categories := categoryRepo.GetCategories()
 
 	products := []string{
 		"Смартфон", "Ноутбук", "Футболка", "Кроссовки",
@@ -34,6 +34,6 @@ func SeedProducts(db *orm.Storage) {
 			ImageURL:    images[rand.Intn(len(images))],
 		}
 
-		db.CreateProduct(&product)
+		productRepo.CreateProduct(&product)
 	}
 }

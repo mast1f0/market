@@ -16,21 +16,28 @@ func main() {
 	seedFlag := flag.Bool("seed", false, "run seed")
 	flag.Parse()
 
-	repo := orm.NewStorage()
+	db := orm.NewConnection()
+	productRepository := orm.NewProductRepository(db)
+	categoryRepository := orm.NewCategoryRepository(db)
+	cartRepository := orm.NewCartRepository(db)
+	orderRepository := orm.NewOrderRepository(db)
+
 	if *seedFlag {
-		seed2.SeedCategories(repo)
-		seed2.SeedProducts(repo)
+		seed2.SeedCategories(categoryRepository)
+		seed2.SeedProducts(productRepository, categoryRepository)
 	}
-	productService := service.NewProductService(repo)
-	categoryService := service.NewCategoryService(repo)
-	cartService := service.NewCartService(repo)
+	productService := service.NewProductService(productRepository)
+	categoryService := service.NewCategoryService(categoryRepository)
+	cartService := service.NewCartService(cartRepository)
+	orderService := service.NewOrderService(orderRepository, cartRepository)
 
 	productHandler := handlers.NewProductHandler(productService, categoryService)
 	categoryHandler := handlers.NewCategoryHandler(categoryService)
 	cartHandler := handlers.NewCartHandler(cartService)
+	orderHanler := handlers.NewOrderHandler(orderService)
 
 	jwt := jwtutil.Manager{Secret: []byte("superSecret")}
-	router := http2.SetupRoutes(productHandler, categoryHandler, cartHandler, &jwt)
+	router := http2.SetupRoutes(productHandler, categoryHandler, cartHandler, orderHanler, &jwt)
 	srv := http2.NewServer(router)
 	srv.Start()
 }

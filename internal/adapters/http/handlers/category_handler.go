@@ -33,7 +33,7 @@ func (h *CategoryHandler) AddCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	created, err := h.service.CreateCategory(req.ToDomain())
+	created, err := h.service.CreateCategory(strings.TrimSpace(req.Name))
 	if err != nil {
 		if helpers.IsDuplicateKey(err) {
 			helpers.RespondError(w, http.StatusConflict, "category with this name already exists")

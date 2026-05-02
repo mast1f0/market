@@ -9,7 +9,7 @@ import (
 	"github.com/go-chi/cors"
 )
 
-func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handlers.CategoryHandler, cartHandler *handlers.CartHandler, jwt *jwtutil.Manager) *chi.Mux { //, CategoryHandler *handlers.CategoryHandler
+func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handlers.CategoryHandler, cartHandler *handlers.CartHandler, orderHandler *handlers.OrderHandler, jwt *jwtutil.Manager) *chi.Mux { //, CategoryHandler *handlers.CategoryHandler
 	r := chi.NewRouter()
 
 	r.Use(cors.Handler(cors.Options{
@@ -50,6 +50,11 @@ func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handl
 			r.Post("/cart/items", cartHandler.AddItem)
 			r.Delete("/cart/items", cartHandler.RemoveItem)
 			r.Put("/cart/items", cartHandler.UpdateItem)
+
+			r.Get("/orders", productHandler.GetAllProducts)
+			r.Get("/orders/{id}", productHandler.GetProductById)
+			r.Get("/order/{id}", orderHandler.GetOrderById)
+			r.Put("/order/{id}", orderHandler.UpdateOrder)
 		})
 	})
 
