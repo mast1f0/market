@@ -141,7 +141,7 @@ func (h *CategoryHandler) ListCategories(w http.ResponseWriter, r *http.Request)
 	helpers.RespondJSON(w, http.StatusOK, categories)
 }
 
-func (h *CategoryHandler) ListCategoriesByCategoryID(w http.ResponseWriter, r *http.Request) {
+func (h *CategoryHandler) ListProductsByCategoryID(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 32)
 	if err != nil || id < 1 {
 		helpers.RespondError(w, http.StatusBadRequest, "invalid category id")

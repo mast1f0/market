@@ -2,7 +2,7 @@ package http
 
 import (
 	"market/internal/adapters/http/handlers"
-	"market/internal/adapters/http/middlware"
+	"market/internal/adapters/http/middleware"
 	jwtutil "market/internal/adapters/jwt"
 
 	"github.com/go-chi/chi/v5"
@@ -24,16 +24,16 @@ func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handl
 		r.Get("/products", productHandler.GetAllProducts)
 		r.Get("/products/{id}", productHandler.GetProductById)
 
-		r.Get("/categories/{id}", categoryHandler.ListCategoriesByCategoryID)
+		r.Get("/categories/{id}", categoryHandler.ListProductsByCategoryID)
 		r.Get("/categories", categoryHandler.ListCategories)
 	})
 
 	//авторизованные типочки
 	r.Group(func(r chi.Router) {
-		r.Use(middlware.AuthMiddleware(jwt))
+		r.Use(middleware.AuthMiddleware(jwt))
 
 		r.Group(func(r chi.Router) {
-			r.Use(middlware.RoleMiddleware("seller", "admin"))
+			r.Use(middleware.RoleMiddleware("seller", "admin"))
 
 			r.Post("/products", productHandler.AddProduct)
 			r.Delete("/products/{id}", productHandler.DeleteProduct)
@@ -45,16 +45,16 @@ func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handl
 		})
 
 		r.Group(func(r chi.Router) {
-			r.Use(middlware.RoleMiddleware("buyer", "seller", "admin"))
+			r.Use(middleware.RoleMiddleware("buyer", "seller", "admin"))
 			r.Get("/cart", cartHandler.GetCart)
 			r.Post("/cart/items", cartHandler.AddItem)
 			r.Delete("/cart/items", cartHandler.RemoveItem)
 			r.Put("/cart/items", cartHandler.UpdateItem)
 
-			r.Get("/orders", productHandler.GetAllProducts)
-			r.Get("/orders/{id}", productHandler.GetProductById)
-			r.Get("/order/{id}", orderHandler.GetOrderById)
-			r.Put("/order/{id}", orderHandler.UpdateOrder)
+			r.Get("/orders", orderHandler.GetOrderByUser)
+			r.Get("/orders/{id}", orderHandler.GetOrderById)
+			r.Put("/orders/{id}", orderHandler.UpdateOrder)
+			r.Post("/orders", orderHandler.GetOrderById)
 		})
 	})
 
