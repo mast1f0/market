@@ -2,21 +2,27 @@ package main
 
 import (
 	"flag"
+	"log"
 	http2 "market/internal/adapters/http"
 	"market/internal/adapters/http/handlers"
 	jwtutil "market/internal/adapters/jwt"
 	"market/internal/adapters/storage/orm"
 	"market/internal/core/service"
+	"market/internal/engine/config"
 	"market/internal/engine/logger"
 	seed2 "market/internal/engine/seed"
 )
 
 func main() {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Error loading config: %v", err)
+	}
 	logger.Init()
 	seedFlag := flag.Bool("seed", false, "run seed")
 	flag.Parse()
 
-	db := orm.NewConnection()
+	db := orm.NewConnection(cfg)
 	productRepository := orm.NewProductRepository(db)
 	categoryRepository := orm.NewCategoryRepository(db)
 	cartRepository := orm.NewCartRepository(db)
@@ -36,7 +42,7 @@ func main() {
 	cartHandler := handlers.NewCartHandler(cartService)
 	orderHanler := handlers.NewOrderHandler(orderService)
 
-	jwt := jwtutil.Manager{Secret: []byte("superSecret")}
+	jwt := jwtutil.Manager{Secret: []byte(cfg.JWT_SECRET)}
 	router := http2.SetupRoutes(productHandler, categoryHandler, cartHandler, orderHanler, &jwt)
 	srv := http2.NewServer(router)
 	srv.Start()

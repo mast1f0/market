@@ -9,11 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewConnection() *gorm.DB {
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		panic(err)
-	}
+func NewConnection(cfg *config.Config) *gorm.DB {
 	dsn := fmt.Sprintf(
 		"postgres://%s:%s@%s:%d/%s?sslmode=disable",
 		cfg.DB_USER, cfg.DB_PASSWORD,
