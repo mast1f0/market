@@ -19,8 +19,7 @@ migrate-reset:
 
 env-generate:
 	echo "Generating default config !!!CHANGE PARAMS"
-	if [ ! -d "configs" ]; then mkdir configs; fi
-	if [ ! -f "configs/.env" ]; then cd configs && touch .env; fi
+	if [ ! -f ".env" ]; then touch .env; fi
 	echo -e "DB_USER=store_usr\n\
 DB_PASSWORD=password132\n\
 DB_HOST=localhost\n\
