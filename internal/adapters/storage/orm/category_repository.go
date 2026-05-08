@@ -64,7 +64,7 @@ func (r *CategoryRepository) GetCategoryByName(name string) *domain.Category {
 	return &category
 }
 
-func (r *CategoryRepository) ProductsByCategory(id int) ([]domain.Product, error) {
+func (r *CategoryRepository) ProductsByCategory(id int64) ([]domain.Product, error) {
 	var products []domain.Product
 	res := r.db.Where("category_id = ?", id).Find(&products)
 	if res.Error != nil {

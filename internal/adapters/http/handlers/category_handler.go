@@ -147,7 +147,7 @@ func (h *CategoryHandler) ListProductsByCategoryID(w http.ResponseWriter, r *htt
 		helpers.RespondError(w, http.StatusBadRequest, "invalid category id")
 		return
 	}
-	products, err := h.service.GetCategoriesByCategoryID(int(id))
+	products, err := h.service.GetCategoriesByCategoryID(id)
 	if err != nil {
 		st := helpers.HTTPStatusForDB(err)
 		if st == http.StatusNotFound {

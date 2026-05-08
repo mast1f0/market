@@ -1,37 +1,72 @@
 package service
 
 import (
+	"errors"
 	"market/internal/core/domain"
 	"market/internal/core/ports"
 )
 
 type ProductService struct {
-	repository ports.ProductRepository
+	productRepository  ports.ProductRepository
+	categoryRepository ports.CategoryRepository
 }
 
-func NewProductService(repository ports.ProductRepository) *ProductService {
-	return &ProductService{repository: repository}
+func NewProductService(productRepo ports.ProductRepository, categoryRepo ports.CategoryRepository) *ProductService {
+	return &ProductService{
+		productRepository:  productRepo,
+		categoryRepository: categoryRepo,
+	}
 }
 
 func (s *ProductService) GetProductById(id int64) (*domain.Product, error) {
-	return s.repository.GetProduct(id)
+	product, err := s.productRepository.GetProduct(id)
+	if err != nil {
+		return nil, err
+	}
+	if id < 1 {
+		return nil, errors.New("invalid product id")
+	}
+	return product, nil
 }
 
 func (s *ProductService) AddToProduct(product *domain.Product) (*domain.Product, error) {
-	return s.repository.CreateProduct(product)
+	_, err := s.categoryRepository.GetCategory(product.CategoryID)
+	if err != nil {
+		return nil, errors.New("category Not Found")
+	}
+	createdProduct, err := s.productRepository.CreateProduct(product)
+	if err != nil {
+		return nil, err
+	}
+	return createdProduct, nil
 }
-func (s *ProductService) UpdateProduct(product *domain.Product) (*domain.Product, error) {
-	return s.repository.UpdateProduct(product)
+func (s *ProductService) UpdateProduct(id int64, userId int64) (*domain.Product, error) {
+	product, err := s.productRepository.GetProduct(id)
+	if err != nil {
+		return nil, err
+	}
+	if product.OwnerID != userId {
+		return nil, errors.New("you are not the owner of this product")
+	}
+	_, err = s.categoryRepository.GetCategory(product.CategoryID)
+	if err != nil {
+		return nil, errors.New("category Not Found")
+	}
+	updatedProduct, err := s.productRepository.UpdateProduct(product)
+	if err != nil {
+		return nil, err
+	}
+	return updatedProduct, nil
 }
 
 func (s *ProductService) DeleteProduct(id int64) error {
-	return s.repository.DeleteProduct(id)
+	return s.productRepository.DeleteProduct(id)
 }
 
 func (s *ProductService) GetAllProducts() []domain.Product {
-	return s.repository.GetProducts()
+	return s.productRepository.GetProducts()
 }
 
 func (s *ProductService) GetProduct(id int64) (*domain.Product, error) {
-	return s.repository.GetProduct(id)
+	return s.productRepository.GetProduct(id)
 }

@@ -15,20 +15,11 @@ import (
 )
 
 type ProductHandler struct {
-	products   *service.ProductService
-	categories *service.CategoryService
+	products *service.ProductService
 }
 
 func NewProductHandler(products *service.ProductService, categories *service.CategoryService) *ProductHandler {
-	return &ProductHandler{products: products, categories: categories}
-}
-
-func (h *ProductHandler) categoryExists(categoryID uint) bool {
-	if categoryID == 0 {
-		return false
-	}
-	_, err := h.categories.GetCategory(int64(categoryID))
-	return err == nil
+	return &ProductHandler{products: products}
 }
 
 func (h *ProductHandler) GetAllProducts(w http.ResponseWriter, r *http.Request) {
@@ -50,10 +41,6 @@ func (h *ProductHandler) AddProduct(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := req.Validate(); err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	if !h.categoryExists(req.CategoryID) {
-		helpers.RespondError(w, http.StatusBadRequest, "unknown category_id")
 		return
 	}
 
@@ -114,44 +101,11 @@ func (h *ProductHandler) PutProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
-	if err != nil || id < 1 {
+	if err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
-
-	product, err := h.products.GetProductById(id)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) || helpers.HTTPStatusForDB(err) == http.StatusNotFound {
-			helpers.RespondError(w, http.StatusNotFound, "product not found")
-			return
-		}
-		helpers.RespondError(w, http.StatusInternalServerError, "failed to load product")
-		return
-	}
-
-	if product.OwnerID != userID {
-		helpers.RespondError(w, http.StatusForbidden, "you are not the owner of this product")
-		return
-	}
-
-	var req dto.UpdateProductRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		helpers.RespondError(w, http.StatusBadRequest, "invalid json body")
-		return
-	}
-	if err := req.Validate(); err != nil {
-		helpers.RespondError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	if !h.categoryExists(req.CategoryID) {
-		helpers.RespondError(w, http.StatusBadRequest, "unknown category_id")
-		return
-	}
-
-	req.ApplyTo(product)
-	product.ID = id
-
-	updated, err := h.products.UpdateProduct(product)
+	updated, err := h.products.UpdateProduct(id, userID)
 	if err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, "unable to update product")
 		return
@@ -162,10 +116,6 @@ func (h *ProductHandler) PutProduct(w http.ResponseWriter, r *http.Request) {
 
 func (h *ProductHandler) GetProductById(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
-	if err != nil || id < 1 {
-		helpers.RespondError(w, http.StatusBadRequest, "invalid id")
-		return
-	}
 
 	product, err := h.products.GetProductById(id)
 	if err != nil {

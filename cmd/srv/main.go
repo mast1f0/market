@@ -32,7 +32,7 @@ func main() {
 		seed2.SeedCategories(categoryRepository)
 		seed2.SeedProducts(productRepository, categoryRepository)
 	}
-	productService := service.NewProductService(productRepository)
+	productService := service.NewProductService(productRepository, categoryRepository)
 	categoryService := service.NewCategoryService(categoryRepository)
 	cartService := service.NewCartService(cartRepository)
 	orderService := service.NewOrderService(orderRepository, cartRepository)

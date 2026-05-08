@@ -30,7 +30,7 @@ func SeedProducts(productRepo *orm.ProductRepository, categoryRepo *orm.Category
 			Name:        products[rand.Intn(len(products))],
 			Description: "Отличный товар для повседневного использования",
 			Price:       float64(rand.Intn(10000)) / 100,
-			CategoryID:  uint(cat.ID),
+			CategoryID:  cat.ID,
 			ImageURL:    images[rand.Intn(len(images))],
 		}
 

@@ -35,6 +35,6 @@ func (s *CategoryService) GetCategories() []domain.Category {
 	return s.repository.GetCategories()
 }
 
-func (s *CategoryService) GetCategoriesByCategoryID(id int) ([]domain.Product, error) {
+func (s *CategoryService) GetCategoriesByCategoryID(id int64) ([]domain.Product, error) {
 	return s.repository.ProductsByCategory(id)
 }
