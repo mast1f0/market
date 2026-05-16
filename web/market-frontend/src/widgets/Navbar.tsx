@@ -6,8 +6,15 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? "text-emerald-700" : "text-slate-600 hover:text-emerald-700"
   }`;
 
+const authLinkClass = ({ isActive }: { isActive: boolean }) =>
+  `text-sm font-medium rounded-lg px-3 py-1.5 transition-colors ${
+    isActive
+      ? "bg-emerald-50 text-emerald-700"
+      : "bg-emerald-600 text-white hover:bg-emerald-700"
+  }`;
+
 export default function Navbar() {
-  const { token, profile, profileLoading, logout } = useAuth();
+  const { token } = useAuth();
 
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
@@ -32,23 +39,13 @@ export default function Navbar() {
           <NavLink to="/cart" className={linkClass}>
             Корзина
           </NavLink>
-          <NavLink to="/profiles" className={linkClass}>
-            Профиль
-          </NavLink>
           {token ? (
-            <button
-              type="button"
-              onClick={logout}
-              className="text-sm font-medium text-slate-600 hover:text-red-600 transition-colors"
-            >
-              Выйти
-              {profile && !profileLoading ? (
-                <span className="hidden lg:inline text-slate-400 font-normal"> ({profile.role})</span>
-              ) : null}
-            </button>
+            <NavLink to="/profiles" className={linkClass}>
+              Профиль
+            </NavLink>
           ) : (
-            <NavLink to="/login" className={linkClass}>
-              Вход
+            <NavLink to="/login" className={authLinkClass}>
+              Войти
             </NavLink>
           )}
         </nav>

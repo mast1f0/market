@@ -1,8 +1,9 @@
-import { useState, type FormEvent, type ChangeEvent } from "react";
+import { useState, useEffect, type FormEvent, type ChangeEvent } from "react";
 import { Link } from "react-router-dom";
-import { apiUrl, bearerHeaders } from "../lib/api.ts";
+import { apiUrl, bearerHeaders, fetchJson } from "../lib/api.ts";
 import { minioLinkUrl } from "../lib/endpoints.ts";
 import ResolvedImage from "../elements/ResolvedImage.tsx";
+import type { Category } from "../types/catalog.ts";
 
 type ProductForm = {
   name: string;
@@ -24,11 +25,30 @@ const initial: ProductForm = {
 
 export default function AddProductPage() {
   const [form, setForm] = useState<ProductForm>(initial);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await fetchJson<Category[]>("/categories");
+        if (!cancelled && Array.isArray(data) && data.length > 0) {
+          setCategories(data);
+          setForm((prev) => ({ ...prev, category_id: data[0].id }));
+        }
+      } catch {
+        /* категории необязательны для формы */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
@@ -49,24 +69,21 @@ export default function AddProductPage() {
       const res = await fetch(minioLinkUrl("/upload"), { method: "POST", body });
       const text = await res.text();
       if (!res.ok) {
-        setMessage({ type: "err", text: text || `Загрузка в minio-link-service: ${res.status}` });
+        setMessage({ type: "err", text: text || `Ошибка загрузки (${res.status})` });
         return;
       }
       const data = JSON.parse(text) as { id?: string; link?: string };
-      if (data.id != null && data.id !== "") {
+      if (data.id) {
         setForm((prev) => ({ ...prev, image_url: String(data.id) }));
-        setMessage({
-          type: "ok",
-          text: "Файл загружен: в товар сохранён id объекта (ссылка для превью подставится через minio-link-service).",
-        });
-      } else if (data.link != null && data.link !== "") {
+        setMessage({ type: "ok", text: "Изображение загружено." });
+      } else if (data.link) {
         setForm((prev) => ({ ...prev, image_url: String(data.link) }));
-        setMessage({ type: "ok", text: "Загружено, в форму записана выданная ссылка." });
+        setMessage({ type: "ok", text: "Изображение загружено." });
       } else {
-        setMessage({ type: "err", text: "Неожиданный ответ сервиса файлов." });
+        setMessage({ type: "err", text: "Неожиданный ответ сервера." });
       }
     } catch {
-      setMessage({ type: "err", text: "Не удалось связаться с minio-link-service." });
+      setMessage({ type: "err", text: "Не удалось загрузить изображение." });
     } finally {
       setUploading(false);
     }
@@ -95,10 +112,7 @@ export default function AddProductPage() {
       });
       const text = await res.text();
       if (res.status === 401 || res.status === 403) {
-        setMessage({
-          type: "err",
-          text: "Нужен JWT от auth-microservice с ролью seller или admin (войдите и повторите).",
-        });
+        setMessage({ type: "err", text: "Недостаточно прав. Войдите как продавец." });
         return;
       }
       if (!res.ok) {
@@ -106,9 +120,9 @@ export default function AddProductPage() {
         return;
       }
       setMessage({ type: "ok", text: "Товар создан." });
-      setForm(initial);
+      setForm((prev) => ({ ...initial, category_id: prev.category_id }));
     } catch {
-      setMessage({ type: "err", text: "Сеть недоступна или маркет API не отвечает." });
+      setMessage({ type: "err", text: "Не удалось создать товар." });
     } finally {
       setSubmitting(false);
     }
@@ -121,10 +135,6 @@ export default function AddProductPage() {
       </Link>
       <div className="mt-6 bg-white rounded-2xl border border-slate-100 shadow-sm p-6 md:p-8">
         <h1 className="text-2xl font-bold text-slate-900">Добавить товар</h1>
-        <p className="text-sm text-slate-600 mt-2">
-          Загрузка картинки — <span className="font-medium text-slate-800">minio-link-service</span>, создание товара —
-          маркет API с тем же JWT, что выдаёт <span className="font-medium text-slate-800">auth-microservice</span>.
-        </p>
 
         {message ? (
           <p
@@ -173,42 +183,44 @@ export default function AddProductPage() {
               />
             </label>
             <label className="block">
-              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">ID категории</span>
-              <input
-                type="number"
-                name="category_id"
-                required
-                min={1}
-                value={form.category_id || ""}
-                onChange={handleChange}
-                className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
-              />
+              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Категория</span>
+              {categories.length > 0 ? (
+                <select
+                  name="category_id"
+                  value={form.category_id}
+                  onChange={handleChange}
+                  className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                >
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="number"
+                  name="category_id"
+                  required
+                  min={1}
+                  value={form.category_id || ""}
+                  onChange={handleChange}
+                  className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                />
+              )}
             </label>
           </div>
 
           <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-4 space-y-3">
             <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Изображение</span>
-            <div className="flex flex-wrap items-center gap-3">
-              <input
-                type="file"
-                accept="image/*"
-                disabled={uploading}
-                onChange={handleFile}
-                className="text-sm text-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-emerald-600 file:text-white file:text-sm file:font-medium hover:file:bg-emerald-700"
-              />
-              {uploading ? <span className="text-sm text-slate-600">Загрузка…</span> : null}
-            </div>
-            <label className="block">
-              <span className="text-xs text-slate-500">Или вручную: URL или id объекта в minio-link-service</span>
-              <input
-                type="text"
-                name="image_url"
-                placeholder="id после загрузки или https://…"
-                value={form.image_url}
-                onChange={handleChange}
-                className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
-              />
-            </label>
+            <input
+              type="file"
+              accept="image/*"
+              disabled={uploading}
+              onChange={handleFile}
+              className="text-sm text-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-emerald-600 file:text-white file:text-sm file:font-medium hover:file:bg-emerald-700"
+            />
+            {uploading ? <span className="text-sm text-slate-600">Загрузка…</span> : null}
             {form.image_url ? (
               <div className="w-40 rounded-lg overflow-hidden border border-slate-200 bg-white">
                 <ResolvedImage imageRef={form.image_url} className="w-full h-28 object-cover" />
@@ -232,7 +244,7 @@ export default function AddProductPage() {
             disabled={submitting}
             className="mt-2 px-4 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 disabled:opacity-60 transition-colors"
           >
-            {submitting ? "Отправка…" : "Отправить на сервер"}
+            {submitting ? "Сохранение…" : "Создать товар"}
           </button>
         </form>
       </div>

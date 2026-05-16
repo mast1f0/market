@@ -1,4 +1,5 @@
 import { formatRub } from "../lib/format.ts";
+import ResolvedImage from "./ResolvedImage.tsx";
 
 interface CartItemProps {
   id: number;
@@ -21,7 +22,11 @@ export default function CartItem({
 }: CartItemProps) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 bg-white rounded-xl border border-slate-100 shadow-sm mb-4">
-      <img src={image} alt="" className="w-full sm:w-24 h-40 sm:h-24 object-cover rounded-lg bg-slate-100 shrink-0" />
+      <ResolvedImage
+        imageRef={image}
+        alt={name}
+        className="w-full sm:w-24 h-40 sm:h-24 object-cover rounded-lg bg-slate-100 shrink-0"
+      />
 
       <div className="flex-1 min-w-0">
         <h3 className="text-lg font-semibold text-slate-900">{name}</h3>

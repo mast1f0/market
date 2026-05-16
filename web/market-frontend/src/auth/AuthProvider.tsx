@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { authApiUrl } from "../lib/endpoints.ts";
-import { ACCESS_TOKEN_KEY } from "../lib/token.ts";
+import { ACCESS_TOKEN_KEY, LOGIN_DISPLAY_KEY } from "../lib/token.ts";
 import { AuthContext, type AuthProfile } from "./context.ts";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -10,6 +10,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(LOGIN_DISPLAY_KEY);
     setToken(null);
     setProfile(null);
     setProfileLoading(false);
@@ -32,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error((text || `Ошибка входа (${res.status})`).trim().slice(0, 240));
     }
     localStorage.setItem(ACCESS_TOKEN_KEY, access_token);
+    localStorage.setItem(LOGIN_DISPLAY_KEY, loginStr);
     setToken(access_token);
   }, []);
 

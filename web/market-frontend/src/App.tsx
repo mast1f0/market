@@ -11,6 +11,7 @@ import SellerPanel from "./widgets/SellerPanel.tsx";
 import ProductPage from "./pages/ProductPage.tsx";
 import LoginPage from "./pages/LoginPage.tsx";
 import CategoryPage from "./pages/CategoryPage.tsx";
+import OrderDetailPage from "./pages/OrderDetailPage.tsx";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
               <Route path="/categories/:id" element={<CategoryPage />} />
 
               <Route path="/profiles" element={<ProfilePage />} />
+              <Route path="/orders/:id" element={<OrderDetailPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/seller-panel" element={<SellerPanel />} />
@@ -35,7 +37,7 @@ function App() {
             </Routes>
           </main>
           <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500">
-            Демо-витрина · {new Date().getFullYear()}
+            © {new Date().getFullYear()} Маркет
           </footer>
         </div>
       </BrowserRouter>

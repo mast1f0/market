@@ -56,15 +56,18 @@ export default function ProductCard({
             {formatRub(price)}
           </p>
 
-          <button
+          {onAddToCart ? (
+            <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                onAddToCart?.();
+                onAddToCart();
               }}
               className="mt-4 w-full py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors"
-          >
-            В корзину
-          </button>
+            >
+              В корзину
+            </button>
+          ) : null}
         </div>
       </article>
   );

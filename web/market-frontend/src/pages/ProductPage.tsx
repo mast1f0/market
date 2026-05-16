@@ -2,15 +2,18 @@ import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { fetchJson } from "../lib/api.ts";
 import { formatRub } from "../lib/format.ts";
+import { useAddToCart } from "../hooks/useAddToCart.ts";
 import type { Product } from "../types/catalog.ts";
 import ResolvedImage from "../elements/ResolvedImage.tsx";
 
 export default function ProductPage() {
   const { id } = useParams();
+  const addToCart = useAddToCart();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [added, setAdded] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -38,6 +41,15 @@ export default function ProductPage() {
       cancelled = true;
     };
   }, [id]);
+
+  const handleAddToCart = async () => {
+    if (!product) return;
+    const ok = await addToCart(product.id);
+    if (ok) {
+      setAdded(true);
+      window.setTimeout(() => setAdded(false), 2000);
+    }
+  };
 
   if (loading) {
     return (
@@ -110,9 +122,10 @@ export default function ProductPage() {
           <div className="mt-8 flex flex-wrap gap-3">
             <button
               type="button"
+              onClick={handleAddToCart}
               className="px-5 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors"
             >
-              В корзину
+              {added ? "Добавлено" : "В корзину"}
             </button>
             <Link
               to="/cart"

@@ -39,11 +39,6 @@ export default function LoginPage() {
       <h1 className="text-2xl font-bold text-slate-900">
         {mode === "login" ? "Вход" : "Регистрация"}
       </h1>
-      <p className="text-sm text-slate-600 mt-2">
-        Учётные записи выдаёт{" "}
-        <span className="font-medium text-slate-800">auth-microservice</span> (JWT совместим с маркет API).
-      </p>
-
       <div className="mt-6 flex rounded-lg border border-slate-200 p-0.5 bg-slate-50">
         <button
           type="button"

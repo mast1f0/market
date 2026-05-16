@@ -1,12 +1,9 @@
 type CategoryCardProps = {
   name: string;
-  description?: string;
   onClick?: () => void;
 };
 
-export default function CategoryCard({ name, description, onClick }: CategoryCardProps) {
-  const subtitle = description?.trim() || "Товары этой категории в общем каталоге на главной.";
-
+export default function CategoryCard({ name, onClick }: CategoryCardProps) {
   return (
     <div
       role="button"
@@ -20,8 +17,7 @@ export default function CategoryCard({ name, description, onClick }: CategoryCar
       }}
       className="cursor-pointer bg-white rounded-xl p-5 border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-200"
     >
-      <h2 className="text-lg font-semibold text-slate-900 mb-2">{name}</h2>
-      <p className="text-slate-600 text-sm leading-relaxed">{subtitle}</p>
+      <h2 className="text-lg font-semibold text-slate-900">{name}</h2>
     </div>
   );
 }
