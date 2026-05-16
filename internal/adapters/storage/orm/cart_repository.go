@@ -39,6 +39,11 @@ func (r *CartRepository) GetCartWithItems(userID int64) (*domain.Cart, error) {
 		}
 		return cart, nil
 	}
+	for i := range cart.Items {
+		if cart.Items[i].PriceSnapshot <= 0 && cart.Items[i].Product != nil {
+			cart.Items[i].PriceSnapshot = cart.Items[i].Product.Price
+		}
+	}
 	return &cart, nil
 }
 
@@ -110,6 +115,9 @@ func (r *CartRepository) AddCartItem(userId int64, cartItem *domain.CartItem) (*
 
 	if err == nil {
 		existingItem.Quantity += cartItem.Quantity
+		if existingItem.PriceSnapshot <= 0 && cartItem.PriceSnapshot > 0 {
+			existingItem.PriceSnapshot = cartItem.PriceSnapshot
+		}
 
 		if err := r.db.Save(&existingItem).Error; err != nil {
 			return nil, err
@@ -128,5 +136,10 @@ func (r *CartRepository) AddCartItem(userId int64, cartItem *domain.CartItem) (*
 }
 
 func (r *CartRepository) ClearCart(userId int64) error {
-	return r.db.Delete(&domain.Cart{}, "user_id = ?", userId).Error
+	var cart domain.Cart
+	err := r.db.Where("user_id = ? AND status = ?", userId, "active").First(&cart).Error
+	if err != nil {
+		return nil
+	}
+	return r.db.Delete(&domain.Cart{}, cart.ID).Error
 }

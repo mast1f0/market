@@ -10,5 +10,6 @@ type OrderItem struct {
 	PriceSnapshot float64   `json:"price_snapshot"`
 	NameSnapshot  string    `json:"name_snapshot"`
 	ImageSnapshot string    `json:"image_snapshot"`
+	Product       *Product  `json:"product,omitempty" gorm:"foreignKey:ProductID;references:ID"`
 	CreatedAt     time.Time `json:"created_at"`
 }

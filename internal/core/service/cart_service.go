@@ -6,11 +6,12 @@ import (
 )
 
 type CartService struct {
-	repo ports.CartRepository
+	repo     ports.CartRepository
+	products ports.ProductRepository
 }
 
-func NewCartService(cartRepo ports.CartRepository) *CartService {
-	return &CartService{repo: cartRepo}
+func NewCartService(cartRepo ports.CartRepository, productRepo ports.ProductRepository) *CartService {
+	return &CartService{repo: cartRepo, products: productRepo}
 }
 
 func (s *CartService) GetCartWithItems(userID int64) (*domain.Cart, error) {
@@ -32,6 +33,13 @@ func (s *CartService) CreateCart(cartID int64) (*domain.Cart, error) {
 }
 
 func (s *CartService) AddCartItem(userID int64, cartItem *domain.CartItem) (*domain.CartItem, error) {
+	product, err := s.products.GetProduct(cartItem.ProductID)
+	if err != nil {
+		return nil, err
+	}
+	if cartItem.PriceSnapshot <= 0 {
+		cartItem.PriceSnapshot = product.Price
+	}
 	return s.repo.AddCartItem(userID, cartItem)
 }
 

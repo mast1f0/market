@@ -49,13 +49,12 @@ func (h *OrderHandler) GetOrderById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	order, err := h.service.GetOrderById(id)
-	if order.UserId != userID {
-		helpers.RespondError(w, http.StatusUnauthorized, "cannot get order")
+	if err != nil {
+		helpers.RespondError(w, http.StatusNotFound, "cannot get order")
 		return
 	}
-
-	if err != nil {
-		helpers.RespondError(w, http.StatusInternalServerError, "cannot get order")
+	if order.UserID != userID {
+		helpers.RespondError(w, http.StatusForbidden, "cannot get order")
 		return
 	}
 	helpers.RespondJSON(w, http.StatusOK, order)

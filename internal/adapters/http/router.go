@@ -54,7 +54,7 @@ func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handl
 			r.Get("/orders", orderHandler.GetOrderByUser)
 			r.Get("/orders/{id}", orderHandler.GetOrderById)
 			r.Put("/orders/{id}", orderHandler.UpdateOrder)
-			r.Post("/orders", orderHandler.GetOrderById)
+			r.Post("/orders", orderHandler.CreateOrder)
 		})
 	})
 

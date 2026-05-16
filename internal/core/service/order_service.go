@@ -47,9 +47,17 @@ func (s *OrderService) CreateFromCart(userId int64) (*domain.Order, error) {
 
 	for _, item := range cart.Items {
 		price := item.PriceSnapshot
+		name := "Товар"
+		image := ""
 
-		if price == 0 && item.Product != nil {
-			price = item.Product.Price
+		if item.Product != nil {
+			if price == 0 {
+				price = item.Product.Price
+			}
+			if item.Product.Name != "" {
+				name = item.Product.Name
+			}
+			image = item.Product.ImageURL
 		}
 
 		totalPrice += price * float64(item.Quantity)
@@ -58,11 +66,13 @@ func (s *OrderService) CreateFromCart(userId int64) (*domain.Order, error) {
 			ProductID:     item.ProductID,
 			Quantity:      item.Quantity,
 			PriceSnapshot: price,
+			NameSnapshot:  name,
+			ImageSnapshot: image,
 		})
 	}
 
 	order := &domain.Order{
-		UserId:     userId,
+		UserID:     userId,
 		Status:     "pending",
 		TotalPrice: totalPrice,
 	}
@@ -72,15 +82,15 @@ func (s *OrderService) CreateFromCart(userId int64) (*domain.Order, error) {
 		return nil, err
 	}
 
-	err = s.orderRepo.AddOrderItems(order.Id, orderedItems)
+	err = s.orderRepo.AddOrderItems(order.ID, orderedItems)
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.cartRepo.ClearCart(cart.ID)
+	err = s.cartRepo.ClearCart(userId)
 	if err != nil {
 		return nil, err
 	}
 
-	return order, nil
+	return s.orderRepo.GetOrderById(order.ID)
 }
