@@ -33,7 +33,7 @@ func (s *CartService) CreateCart(cartID int64) (*domain.Cart, error) {
 }
 
 func (s *CartService) AddCartItem(userID int64, cartItem *domain.CartItem) (*domain.CartItem, error) {
-	product, err := s.products.GetProduct(cartItem.ProductID)
+	product, err := s.products.GetProductById(cartItem.ProductID)
 	if err != nil {
 		return nil, err
 	}

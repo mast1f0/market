@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strconv"
 
@@ -11,19 +10,22 @@ import (
 	"market/internal/core/service"
 
 	"github.com/go-chi/chi/v5"
-	"gorm.io/gorm"
 )
 
 type ProductHandler struct {
 	products *service.ProductService
 }
 
-func NewProductHandler(products *service.ProductService, categories *service.CategoryService) *ProductHandler {
+func NewProductHandler(products *service.ProductService) *ProductHandler {
 	return &ProductHandler{products: products}
 }
 
 func (h *ProductHandler) GetAllProducts(w http.ResponseWriter, r *http.Request) {
-	products := h.products.GetAllProducts()
+	products, err := h.products.GetAllProducts()
+	if err != nil {
+		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 	helpers.RespondJSON(w, http.StatusOK, products)
 }
 
@@ -44,7 +46,7 @@ func (h *ProductHandler) AddProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	product, err := h.products.AddToProduct(req.ToDomain(userID))
+	product, err := h.products.CreateProduct(req.ToDomain(userID))
 	if err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, "unable to add product")
 		return
@@ -61,32 +63,13 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
-	if err != nil || id < 1 {
+	if err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
 
-	product, err := h.products.GetProductById(id)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) || helpers.HTTPStatusForDB(err) == http.StatusNotFound {
-			helpers.RespondError(w, http.StatusNotFound, "product not found")
-			return
-		}
-		helpers.RespondError(w, http.StatusInternalServerError, "failed to load product")
-		return
-	}
-
-	if product.OwnerID != userID {
-		helpers.RespondError(w, http.StatusForbidden, "you are not the owner of this product")
-		return
-	}
-
-	if err := h.products.DeleteProduct(id); err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			helpers.RespondError(w, http.StatusNotFound, "product not found")
-			return
-		}
-		helpers.RespondError(w, http.StatusInternalServerError, "failed to delete product")
+	if err := h.products.DeleteProduct(id, userID); err != nil {
+		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -105,7 +88,13 @@ func (h *ProductHandler) PutProduct(w http.ResponseWriter, r *http.Request) {
 		helpers.RespondError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
-	updated, err := h.products.UpdateProduct(id, userID)
+	var req dto.UpdateProductRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helpers.RespondError(w, http.StatusBadRequest, "invalid json body")
+		return
+	}
+
+	updated, err := h.products.UpdateProduct(req.ToDomain(userID, id))
 	if err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, "unable to update product")
 		return
@@ -119,11 +108,7 @@ func (h *ProductHandler) GetProductById(w http.ResponseWriter, r *http.Request) 
 
 	product, err := h.products.GetProductById(id)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) || helpers.HTTPStatusForDB(err) == http.StatusNotFound {
-			helpers.RespondError(w, http.StatusNotFound, "product not found")
-			return
-		}
-		helpers.RespondError(w, http.StatusInternalServerError, "failed to load product")
+		helpers.RespondError(w, http.StatusNotFound, err.Error())
 		return
 	}
 

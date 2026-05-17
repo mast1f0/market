@@ -37,7 +37,7 @@ func main() {
 	cartService := service.NewCartService(cartRepository, productRepository)
 	orderService := service.NewOrderService(orderRepository, cartRepository)
 
-	productHandler := handlers.NewProductHandler(productService, categoryService)
+	productHandler := handlers.NewProductHandler(productService)
 	categoryHandler := handlers.NewCategoryHandler(categoryService)
 	cartHandler := handlers.NewCartHandler(cartService)
 	orderHanler := handlers.NewOrderHandler(orderService)

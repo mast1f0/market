@@ -1,7 +1,9 @@
 package orm
 
 import (
+	"errors"
 	"market/internal/core/domain"
+	"market/internal/core/ports"
 
 	"gorm.io/gorm"
 )
@@ -16,15 +18,22 @@ func NewProductRepository(db *gorm.DB) *ProductRepository {
 	}
 }
 
-func (r *ProductRepository) GetProducts() []domain.Product {
+func (r *ProductRepository) GetProducts() ([]domain.Product, error) {
 	var products []domain.Product
-	r.db.Find(&products)
-	return products
+	err := r.db.Find(&products).Error
+	if err != nil {
+		return nil, err
+	}
+	return products, nil
 }
 
-func (r *ProductRepository) GetProduct(id int64) (*domain.Product, error) {
+func (r *ProductRepository) GetProductById(id int64) (*domain.Product, error) {
 	var product domain.Product
-	if err := r.db.First(&product, id).Error; err != nil {
+	err := r.db.First(&product, id).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ports.ErrNotFound
+		}
 		return nil, err
 	}
 	return &product, nil
@@ -32,24 +41,38 @@ func (r *ProductRepository) GetProduct(id int64) (*domain.Product, error) {
 
 func (r *ProductRepository) DeleteProduct(id int64) error {
 	var product domain.Product
-	if err := r.db.First(&product, id).Error; err != nil {
+	err := r.db.First(&product, id).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ports.ErrNotFound
+		}
 		return err
 	}
-	return r.db.Delete(&product).Error
+	err = r.db.Delete(&product).Error
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *ProductRepository) CreateProduct(product *domain.Product) (*domain.Product, error) {
-	res := r.db.Create(product)
-	if res.Error != nil {
-		return nil, res.Error
+	err := r.db.Create(product).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return nil, ports.ErrAlreadyExists
+		}
+		return nil, err
 	}
 	return product, nil
 }
 
 func (r *ProductRepository) UpdateProduct(product *domain.Product) (*domain.Product, error) {
-	res := r.db.Save(product)
-	if res.Error != nil {
-		return nil, res.Error
+	err := r.db.Save(product).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return nil, ports.ErrAlreadyExists
+		}
+		return nil, err
 	}
 	return product, nil
 }

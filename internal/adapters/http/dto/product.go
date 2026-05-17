@@ -69,11 +69,15 @@ func (r *UpdateProductRequest) Validate() error {
 	return nil
 }
 
-func (r *UpdateProductRequest) ApplyTo(p *domain.Product) {
-	p.Name = strings.TrimSpace(r.Name)
-	p.Description = r.Description
-	p.Price = r.Price
-	p.CategoryID = r.CategoryID
-	p.ImageURL = strings.TrimSpace(r.ImageURL)
-	p.Stock = r.Stock
+func (r *UpdateProductRequest) ToDomain(ownerID int64, productId int64) *domain.Product {
+	return &domain.Product{
+		ID:          productId,
+		OwnerID:     ownerID,
+		Name:        strings.TrimSpace(r.Name),
+		Description: r.Description,
+		Price:       r.Price,
+		CategoryID:  r.CategoryID,
+		ImageURL:    strings.TrimSpace(r.ImageURL),
+		Stock:       r.Stock,
+	}
 }

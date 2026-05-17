@@ -28,7 +28,7 @@ func (s *Storage) GetProducts() []domain.Product {
 	return s.products
 }
 
-func (s *Storage) GetProduct(id int64) (*domain.Product, error) {
+func (s *Storage) GetProductById(id int64) (*domain.Product, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	for _, product := range s.products {
