@@ -26,12 +26,12 @@ func ensureOrderItems(order *domain.Order) {
 	if order.Items == nil {
 		order.Items = []domain.OrderItem{}
 	}
-	for i := range order.Items {
-		if order.Items[i].ImageSnapshot == "" && order.Items[i].Product != nil {
-			order.Items[i].ImageSnapshot = order.Items[i].Product.ImageURL
+	for i, item := range order.Items {
+		if item.ImageSnapshot == "" && item.Product != nil {
+			order.Items[i].ImageSnapshot = item.Product.ImageURL
 		}
-		if order.Items[i].NameSnapshot == "" && order.Items[i].Product != nil && order.Items[i].Product.Name != "" {
-			order.Items[i].NameSnapshot = order.Items[i].Product.Name
+		if item.NameSnapshot == "" && item.Product != nil && item.Product.Name != "" {
+			order.Items[i].NameSnapshot = item.Product.Name
 		}
 	}
 }
