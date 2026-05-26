@@ -26,7 +26,7 @@ func (h *CartHandler) GetCart(w http.ResponseWriter, r *http.Request) {
 
 	cart, err := h.service.GetCartWithItems(userID)
 	if err != nil {
-		helpers.RespondError(w, http.StatusInternalServerError, "failed to load cart")
+		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
