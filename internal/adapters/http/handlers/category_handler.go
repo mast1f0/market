@@ -35,11 +35,7 @@ func (h *CategoryHandler) AddCategory(w http.ResponseWriter, r *http.Request) {
 
 	created, err := h.service.CreateCategory(strings.TrimSpace(req.Name))
 	if err != nil {
-		if helpers.IsDuplicateKey(err) {
-			helpers.RespondError(w, http.StatusConflict, "category with this name already exists")
-			return
-		}
-		helpers.RespondError(w, http.StatusInternalServerError, "failed to create category")
+		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -48,19 +44,9 @@ func (h *CategoryHandler) AddCategory(w http.ResponseWriter, r *http.Request) {
 
 func (h *CategoryHandler) GetCategory(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
-	if err != nil || id < 1 {
-		helpers.RespondError(w, http.StatusBadRequest, "invalid category id")
-		return
-	}
-
 	category, err := h.service.GetCategory(id)
 	if err != nil {
-		st := helpers.HTTPStatusForDB(err)
-		if st == http.StatusNotFound {
-			helpers.RespondError(w, http.StatusNotFound, "category not found")
-			return
-		}
-		helpers.RespondError(w, st, "failed to load category")
+		helpers.RespondError(w, http.StatusNotFound, err.Error())
 		return
 	}
 
@@ -69,18 +55,9 @@ func (h *CategoryHandler) GetCategory(w http.ResponseWriter, r *http.Request) {
 
 func (h *CategoryHandler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
-	if err != nil || id < 1 {
-		helpers.RespondError(w, http.StatusBadRequest, "invalid category id")
-		return
-	}
-
-	if err := h.service.DeleteCategory(id); err != nil {
-		st := helpers.HTTPStatusForDB(err)
-		if st == http.StatusNotFound {
-			helpers.RespondError(w, http.StatusNotFound, "category not found")
-			return
-		}
-		helpers.RespondError(w, http.StatusInternalServerError, "failed to delete category")
+	if err = h.service.DeleteCategory(id); err != nil {
+		//со статусами надо порешать
+		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -89,11 +66,6 @@ func (h *CategoryHandler) DeleteCategory(w http.ResponseWriter, r *http.Request)
 
 func (h *CategoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
-	if err != nil || id < 1 {
-		helpers.RespondError(w, http.StatusBadRequest, "invalid category id")
-		return
-	}
-
 	var req dto.UpdateCategoryRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, "invalid json body")
@@ -105,11 +77,7 @@ func (h *CategoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request)
 	}
 
 	if _, err := h.service.GetCategory(id); err != nil {
-		if helpers.HTTPStatusForDB(err) == http.StatusNotFound {
-			helpers.RespondError(w, http.StatusNotFound, "category not found")
-			return
-		}
-		helpers.RespondError(w, http.StatusInternalServerError, "failed to load category")
+		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -120,15 +88,6 @@ func (h *CategoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request)
 
 	updated, err := h.service.UpdateCategory(category)
 	if err != nil {
-		if helpers.IsDuplicateKey(err) {
-			helpers.RespondError(w, http.StatusConflict, "category with this name already exists")
-			return
-		}
-		st := helpers.HTTPStatusForDB(err)
-		if st == http.StatusNotFound {
-			helpers.RespondError(w, http.StatusNotFound, "category not found")
-			return
-		}
 		helpers.RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -143,17 +102,10 @@ func (h *CategoryHandler) ListCategories(w http.ResponseWriter, r *http.Request)
 
 func (h *CategoryHandler) ListProductsByCategoryID(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 32)
-	if err != nil || id < 1 {
-		helpers.RespondError(w, http.StatusBadRequest, "invalid category id")
-		return
-	}
 	products, err := h.service.GetCategoriesByCategoryID(id)
 	if err != nil {
-		st := helpers.HTTPStatusForDB(err)
-		if st == http.StatusNotFound {
-			helpers.RespondError(w, http.StatusNotFound, "category not found")
-			return
-		}
+		helpers.RespondError(w, http.StatusNotFound, err.Error())
+		return
 	}
 	helpers.RespondJSON(w, http.StatusOK, products)
 }

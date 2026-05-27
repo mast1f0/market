@@ -3,6 +3,7 @@ package orm
 import (
 	"errors"
 	"market/internal/core/domain"
+	"market/internal/core/ports"
 
 	"gorm.io/gorm"
 )
@@ -21,17 +22,21 @@ func (r *CategoryRepository) CreateCategory(categoryName string) (*domain.Catego
 	var category = &domain.Category{
 		Name: categoryName,
 	}
-	res := r.db.Create(category)
-	if res.Error != nil {
-		return nil, res.Error
+	if err := r.db.Create(category).Error; err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return nil, ports.ErrCategoryExists
+		}
+		return nil, ports.ErrFailedToCreateCategory
 	}
 	return category, nil
 }
 
 func (r *CategoryRepository) UpdateCategory(category *domain.Category) (*domain.Category, error) {
-	res := r.db.Save(&category)
-	if res.Error != nil {
-		return nil, errors.New("не удалось обновить")
+	if err := r.db.Save(&category).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ports.ErrCategoryNotFound
+		}
+		return nil, ports.ErrFailedToUpdateCategory
 	}
 	return category, nil
 }
@@ -39,15 +44,21 @@ func (r *CategoryRepository) UpdateCategory(category *domain.Category) (*domain.
 func (r *CategoryRepository) DeleteCategory(id int64) error {
 	var category domain.Category
 	if err := r.db.First(&category, id).Error; err != nil {
-		return err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ports.ErrCategoryNotFound
+		}
+		return ports.ErrFailedToDeleteCategory
 	}
-	return r.db.Delete(&category).Error
+	if err := r.db.Delete(&category).Error; err != nil {
+		return ports.ErrFailedToDeleteCategory
+	}
+	return nil
 }
 
 func (r *CategoryRepository) GetCategory(id int64) (*domain.Category, error) {
 	var category domain.Category
 	if err := r.db.First(&category, id).Error; err != nil {
-		return nil, err
+		return nil, ports.ErrCategoryNotFound
 	}
 	return &category, nil
 }
@@ -58,17 +69,21 @@ func (r *CategoryRepository) GetCategories() []domain.Category {
 	return categories
 }
 
-func (r *CategoryRepository) GetCategoryByName(name string) *domain.Category {
+func (r *CategoryRepository) GetCategoryByName(name string) (*domain.Category, error) {
 	var category domain.Category
-	r.db.Where("name = ?", name).First(&category)
-	return &category
+	if err := r.db.First(&category, "name = ?", name).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ports.ErrCategoryNotFound
+		}
+	}
+	return &category, nil
 }
 
 func (r *CategoryRepository) ProductsByCategory(id int64) ([]domain.Product, error) {
 	var products []domain.Product
 	res := r.db.Where("category_id = ?", id).Find(&products)
 	if res.Error != nil {
-		return nil, res.Error
+		return nil, ports.ErrCategoryNotFound
 	}
 	return products, nil
 }
