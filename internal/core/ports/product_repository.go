@@ -6,10 +6,11 @@ import (
 )
 
 var (
-	ErrNotFound      = errors.New("not found")
-	ErrAlreadyExists = errors.New("already exists")
-	ErrConflict      = errors.New("conflict")
-	ErrInvalidData   = errors.New("invalid data")
+	ErrNotFound            = errors.New("not found")
+	ErrAlreadyExists       = errors.New("already exists")
+	ErrConflict            = errors.New("conflict")
+	ErrInvalidData         = errors.New("invalid data")
+	ErrFailedToLoadProduct = errors.New("failed to load product")
 )
 
 type ProductRepository interface {
