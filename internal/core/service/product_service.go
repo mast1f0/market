@@ -49,12 +49,12 @@ func (s *ProductService) CreateProduct(product *domain.Product) (*domain.Product
 	}
 	return createdProduct, nil
 }
-func (s *ProductService) UpdateProduct(newProduct *domain.Product) (*domain.Product, error) {
+func (s *ProductService) UpdateProduct(newProduct *domain.Product, role string) (*domain.Product, error) {
 	product, err := s.productRepository.GetProductById(newProduct.ID)
 	if err != nil {
 		return nil, err
 	}
-	if product.OwnerID != newProduct.OwnerID {
+	if product.OwnerID != newProduct.OwnerID && role != "admin" {
 		return nil, ErrForbidden
 	}
 	_, err = s.categoryRepository.GetCategory(newProduct.CategoryID)
@@ -68,7 +68,7 @@ func (s *ProductService) UpdateProduct(newProduct *domain.Product) (*domain.Prod
 	return updatedProduct, nil
 }
 
-func (s *ProductService) DeleteProduct(id int64, userId int64) error {
+func (s *ProductService) DeleteProduct(id int64, userId int64, role string) error {
 	if id < 1 {
 		return ErrInvalidProductID
 	}
@@ -76,7 +76,7 @@ func (s *ProductService) DeleteProduct(id int64, userId int64) error {
 	if err != nil {
 		return err
 	}
-	if product.OwnerID != userId {
+	if product.OwnerID != userId && role != "admin" {
 		return ErrForbidden
 	}
 

@@ -68,7 +68,13 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.products.DeleteProduct(id, userID); err != nil {
+	role, ok := r.Context().Value("role").(string)
+	if !ok {
+		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user role")
+		return
+	}
+
+	if err := h.products.DeleteProduct(id, userID, role); err != nil {
 		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -83,6 +89,11 @@ func (h *ProductHandler) PutProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	role, ok := r.Context().Value("role").(string)
+	if !ok {
+		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user role")
+		return
+	}
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, "invalid id")
@@ -94,7 +105,7 @@ func (h *ProductHandler) PutProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updated, err := h.products.UpdateProduct(req.ToDomain(userID, id))
+	updated, err := h.products.UpdateProduct(req.ToDomain(userID, id), role)
 	if err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, "unable to update product")
 		return

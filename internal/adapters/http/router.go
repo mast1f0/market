@@ -44,7 +44,6 @@ func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handl
 			r.Put("/categories/{id}", categoryHandler.UpdateCategory)
 
 			r.Put("/orders/{id}", orderHandler.UpdateOrder)
-			r.Get("/orders", orderHandler.GetOrderByUser)
 		})
 
 		r.Group(func(r chi.Router) {
@@ -54,6 +53,7 @@ func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handl
 			r.Delete("/cart/items", cartHandler.RemoveItem)
 			r.Put("/cart/items", cartHandler.UpdateItem)
 
+			r.Get("/orders", orderHandler.GetOrderByUser)
 			r.Get("/orders/{id}", orderHandler.GetOrderById)
 			r.Post("/orders", orderHandler.CreateOrder)
 		})

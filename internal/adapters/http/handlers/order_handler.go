@@ -27,8 +27,21 @@ func (h *OrderHandler) GetOrderByUser(w http.ResponseWriter, r *http.Request) {
 		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
 		return
 	}
+	role, _ := r.Context().Value("role").(string)
 
-	orders, err := h.service.GetByUserId(userID)
+	targetUserID := userID
+	if role == "admin" {
+		if q := r.URL.Query().Get("user_id"); q != "" {
+			parsed, err := strconv.ParseInt(q, 10, 64)
+			if err != nil || parsed < 1 {
+				helpers.RespondError(w, http.StatusBadRequest, "invalid user_id")
+				return
+			}
+			targetUserID = parsed
+		}
+	}
+
+	orders, err := h.service.GetByUserId(targetUserID)
 	if err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, "cannot get orders")
 		return
@@ -54,8 +67,11 @@ func (h *OrderHandler) GetOrderById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if order.UserID != userID {
-		helpers.RespondError(w, http.StatusForbidden, "cannot get order")
-		return
+		role, _ := r.Context().Value("role").(string)
+		if role != "admin" {
+			helpers.RespondError(w, http.StatusForbidden, "cannot get order")
+			return
+		}
 	}
 	helpers.RespondJSON(w, http.StatusOK, order)
 
@@ -76,9 +92,14 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *OrderHandler) UpdateOrder(w http.ResponseWriter, r *http.Request) {
-	_, ok := r.Context().Value("user_id").(int64)
+	userID, ok := r.Context().Value("user_id").(int64)
 	if !ok {
 		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
+		return
+	}
+	role, ok := r.Context().Value("role").(string)
+	if !ok {
+		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user role")
 		return
 	}
 	strId := chi.URLParam(r, "id")
@@ -93,7 +114,7 @@ func (h *OrderHandler) UpdateOrder(w http.ResponseWriter, r *http.Request) {
 		helpers.RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	err = h.service.UpdateStatus(id, req.Status)
+	err = h.service.UpdateStatus(id, req.Status, userID, role)
 	if err != nil {
 		helpers.RespondError(w, http.StatusInternalServerError, "cannot update order")
 		return

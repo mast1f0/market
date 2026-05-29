@@ -28,7 +28,14 @@ func (s *OrderService) GetByUserId(userId int64) ([]domain.Order, error) {
 	return s.orderRepo.GetOrderByUserId(userId)
 }
 
-func (s *OrderService) UpdateStatus(orderId int64, status string) error {
+func (s *OrderService) UpdateStatus(orderId int64, status string, userID int64, role string) error {
+	order, err := s.GetOrderById(orderId)
+	if err != nil {
+		return err
+	}
+	if order.UserID != userID && role != "admin" {
+		return errors.New("forbidden")
+	}
 	return s.orderRepo.UpdateOrderStatus(orderId, status)
 }
 
