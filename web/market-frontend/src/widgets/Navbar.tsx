@@ -14,7 +14,10 @@ const authLinkClass = ({ isActive }: { isActive: boolean }) =>
   }`;
 
 export default function Navbar() {
-  const { token } = useAuth();
+  const { token, profile } = useAuth();
+  const role = profile?.role;
+  const isSeller = role === "seller" || role === "admin";
+  const isAdmin = role === "admin";
 
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
@@ -39,6 +42,16 @@ export default function Navbar() {
           <NavLink to="/cart" className={linkClass}>
             Корзина
           </NavLink>
+          {isSeller ? (
+            <NavLink to="/seller-panel" className={linkClass}>
+              Продавец
+            </NavLink>
+          ) : null}
+          {isAdmin ? (
+            <NavLink to="/admin" className={linkClass}>
+              Админ
+            </NavLink>
+          ) : null}
           {token ? (
             <NavLink to="/profiles" className={linkClass}>
               Профиль

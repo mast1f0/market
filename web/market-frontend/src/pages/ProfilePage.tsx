@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import OrderCard from "../elements/OrderCard.tsx";
+import OrderSearchBar from "../elements/OrderSearchBar.tsx";
 import { useAuth } from "../auth/useAuth.ts";
-import { bearerHeaders } from "../lib/api.ts";
-import { marketApiUrl } from "../lib/endpoints.ts";
-import { normalizeOrders, type OrderDTO } from "../lib/orders.ts";
+import { filterOrders } from "../lib/order-search.ts";
+import { fetchOrders, type OrderDTO } from "../lib/orders.ts";
 import { LOGIN_DISPLAY_KEY } from "../lib/token.ts";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -23,6 +23,7 @@ export default function ProfilePage() {
   const [orders, setOrders] = useState<OrderDTO[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState<string | null>(null);
+  const [orderQuery, setOrderQuery] = useState("");
 
   const justOrdered = searchParams.get("ordered") === "1";
   const displayLogin = localStorage.getItem(LOGIN_DISPLAY_KEY);
@@ -36,10 +37,8 @@ export default function ProfilePage() {
 
     (async () => {
       try {
-        const res = await fetch(marketApiUrl("/orders"), { headers: bearerHeaders() });
-        if (!res.ok) throw new Error(await res.text());
-        const raw = await res.json();
-        if (!cancelled) setOrders(normalizeOrders(raw));
+        const list = await fetchOrders();
+        if (!cancelled) setOrders(list);
       } catch (e) {
         if (!cancelled) {
           setOrdersError(e instanceof Error ? e.message : "Не удалось загрузить заказы");
@@ -89,7 +88,10 @@ export default function ProfilePage() {
 
   const role = profile?.role ?? "buyer";
   const isSeller = role === "seller" || role === "admin";
+  const isAdmin = role === "admin";
   const initial = (displayLogin?.[0] ?? "U").toUpperCase();
+
+  const filteredOrders = useMemo(() => filterOrders(orders, orderQuery), [orders, orderQuery]);
 
   return (
     <div className="max-w-3xl mx-auto p-6 md:p-8">
@@ -144,6 +146,14 @@ export default function ProfilePage() {
               </Link>
             </>
           ) : null}
+          {isAdmin ? (
+            <Link
+              to="/admin"
+              className="inline-flex items-center justify-center px-4 py-2.5 rounded-lg border border-violet-200 text-violet-800 text-sm font-medium hover:bg-violet-50"
+            >
+              Админ-панель
+            </Link>
+          ) : null}
           <button
             type="button"
             onClick={logout}
@@ -155,7 +165,18 @@ export default function ProfilePage() {
       </div>
 
       <section>
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">Мои заказы</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <h2 className="text-lg font-semibold text-slate-900">Мои заказы</h2>
+          {orders.length > 0 ? (
+            <p className="text-xs text-slate-500 shrink-0">
+              {orderQuery ? `${filteredOrders.length} из ${orders.length}` : `${orders.length} всего`}
+            </p>
+          ) : null}
+        </div>
+
+        {orders.length > 0 ? (
+          <OrderSearchBar value={orderQuery} onChange={setOrderQuery} className="mb-4" />
+        ) : null}
 
         {ordersLoading ? (
           <div className="space-y-3">
@@ -175,9 +196,13 @@ export default function ProfilePage() {
               Перейти в каталог
             </Link>
           </div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 bg-white p-8 text-center">
+            <p className="text-slate-600">Ничего не найдено по запросу «{orderQuery}»</p>
+          </div>
         ) : (
           <div className="space-y-3">
-            {orders.map((order) => (
+            {filteredOrders.map((order) => (
               <OrderCard key={order.id} order={order} />
             ))}
           </div>

@@ -1,10 +1,11 @@
 import { useState, useEffect, type FormEvent, type ChangeEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../auth/useAuth.ts";
 import { apiUrl, bearerHeaders, fetchJson } from "../lib/api.ts";
 import { parsePrice } from "../lib/format.ts";
 import { minioLinkUrl } from "../lib/endpoints.ts";
 import ResolvedImage from "../elements/ResolvedImage.tsx";
-import type { Category } from "../types/catalog.ts";
+import type { Category, Product } from "../types/catalog.ts";
 
 type ProductForm = {
   name: string;
@@ -15,51 +16,77 @@ type ProductForm = {
   stock: number;
 };
 
-const initial: ProductForm = {
-  name: "",
-  description: "",
-  price: 0,
-  category_id: 1,
-  image_url: "",
-  stock: 0,
-};
-
-export default function AddProductPage() {
-  const [form, setForm] = useState<ProductForm>(initial);
+export default function EditProductPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { profile } = useAuth();
+  const [form, setForm] = useState<ProductForm | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [forbidden, setForbidden] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
+
     (async () => {
       try {
-        const data = await fetchJson<Category[]>("/categories");
-        if (!cancelled && Array.isArray(data) && data.length > 0) {
-          setCategories(data);
-          setForm((prev) => ({ ...prev, category_id: data[0].id }));
+        const [product, cats] = await Promise.all([
+          fetchJson<Product>(`/products/${id}`),
+          fetchJson<Category[]>("/categories").catch(() => [] as Category[]),
+        ]);
+        if (cancelled) return;
+
+        if (profile && product.owner_id != null && product.owner_id !== profile.user_id) {
+          setForbidden(true);
+          return;
+        }
+
+        if (!cancelled) {
+          setCategories(Array.isArray(cats) ? cats : []);
+          setForm({
+            name: product.name,
+            description: product.description ?? "",
+            price: product.price,
+            category_id: product.category_id ?? 1,
+            image_url: product.image_url ?? "",
+            stock: product.stock ?? 0,
+          });
         }
       } catch {
-        /* категории необязательны для формы */
+        if (!cancelled) setMessage({ type: "err", text: "Не удалось загрузить товар." });
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
+
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [id, profile]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]:
-        name === "price"
-          ? parsePrice(value)
-          : name === "category_id" || name === "stock"
-            ? Number(value) || 0
-            : value,
-    }));
+    setForm((prev) =>
+      prev
+        ? {
+            ...prev,
+            [name]:
+              name === "price"
+                ? parsePrice(value)
+                : name === "category_id" || name === "stock"
+                  ? Number(value) || 0
+                  : value,
+          }
+        : prev
+    );
   };
 
   const handleFile = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -79,10 +106,10 @@ export default function AddProductPage() {
       }
       const data = JSON.parse(text) as { id?: string; link?: string };
       if (data.id) {
-        setForm((prev) => ({ ...prev, image_url: String(data.id) }));
+        setForm((prev) => (prev ? { ...prev, image_url: String(data.id) } : prev));
         setMessage({ type: "ok", text: "Изображение загружено." });
       } else if (data.link) {
-        setForm((prev) => ({ ...prev, image_url: String(data.link) }));
+        setForm((prev) => (prev ? { ...prev, image_url: String(data.link) } : prev));
         setMessage({ type: "ok", text: "Изображение загружено." });
       } else {
         setMessage({ type: "err", text: "Неожиданный ответ сервера." });
@@ -96,6 +123,7 @@ export default function AddProductPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!form || !id) return;
     if (form.price <= 0) {
       setMessage({ type: "err", text: "Укажите цену больше нуля." });
       return;
@@ -103,8 +131,8 @@ export default function AddProductPage() {
     setMessage(null);
     setSubmitting(true);
     try {
-      const res = await fetch(apiUrl("/products"), {
-        method: "POST",
+      const res = await fetch(apiUrl(`/products/${id}`), {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
@@ -121,21 +149,51 @@ export default function AddProductPage() {
       });
       const text = await res.text();
       if (res.status === 401 || res.status === 403) {
-        setMessage({ type: "err", text: "Недостаточно прав. Войдите как продавец." });
+        setMessage({ type: "err", text: "Недостаточно прав для редактирования." });
         return;
       }
       if (!res.ok) {
         setMessage({ type: "err", text: text || `Ошибка ${res.status}` });
         return;
       }
-      setMessage({ type: "ok", text: "Товар создан." });
-      setForm((prev) => ({ ...initial, category_id: prev.category_id }));
+      setMessage({ type: "ok", text: "Изменения сохранены." });
+      window.setTimeout(() => navigate("/seller-panel"), 800);
     } catch {
-      setMessage({ type: "err", text: "Не удалось создать товар." });
+      setMessage({ type: "err", text: "Не удалось сохранить товар." });
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-xl mx-auto p-6 md:p-8">
+        <div className="h-8 w-40 bg-slate-200 rounded animate-pulse" />
+      </div>
+    );
+  }
+
+  if (forbidden) {
+    return (
+      <div className="max-w-xl mx-auto p-6 md:p-8">
+        <p className="text-slate-600 mb-4">Вы можете редактировать только свои товары.</p>
+        <Link to="/seller-panel" className="text-sm font-medium text-emerald-700 hover:text-emerald-800">
+          ← Панель продавца
+        </Link>
+      </div>
+    );
+  }
+
+  if (!form) {
+    return (
+      <div className="max-w-xl mx-auto p-6 md:p-8">
+        <p className="text-red-600 mb-4">{message?.text ?? "Товар не найден"}</p>
+        <Link to="/seller-panel" className="text-sm font-medium text-emerald-700 hover:text-emerald-800">
+          ← Панель продавца
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-xl mx-auto p-6 md:p-8">
@@ -143,7 +201,7 @@ export default function AddProductPage() {
         ← Панель продавца
       </Link>
       <div className="mt-6 bg-white rounded-2xl border border-slate-100 shadow-sm p-6 md:p-8">
-        <h1 className="text-2xl font-bold text-slate-900">Добавить товар</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Редактировать товар</h1>
 
         {message ? (
           <p
@@ -256,7 +314,7 @@ export default function AddProductPage() {
             disabled={submitting}
             className="mt-2 px-4 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 disabled:opacity-60 transition-colors"
           >
-            {submitting ? "Сохранение…" : "Создать товар"}
+            {submitting ? "Сохранение…" : "Сохранить"}
           </button>
         </form>
       </div>

@@ -1,31 +1,24 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import OrderItemRow from "../elements/OrderItemRow.tsx";
+import OrderStatusBadge from "../elements/OrderStatusBadge.tsx";
+import OrderStatusPicker from "../elements/OrderStatusPicker.tsx";
+import OrderStatusTimeline from "../elements/OrderStatusTimeline.tsx";
 import { bearerHeaders } from "../lib/api.ts";
 import { formatRub } from "../lib/format.ts";
 import { marketApiUrl } from "../lib/endpoints.ts";
-import {
-  formatOrderDate,
-  normalizeOrder,
-  orderStatusLabel,
-  orderStatusTone,
-  type OrderDTO,
-} from "../lib/orders.ts";
+import { formatOrderDate, normalizeOrder, updateOrderStatus, type OrderDTO } from "../lib/orders.ts";
 import { useAuth } from "../auth/useAuth.ts";
-
-const toneClasses = {
-  neutral: "bg-slate-100 text-slate-700",
-  active: "bg-sky-100 text-sky-800",
-  success: "bg-emerald-100 text-emerald-800",
-  danger: "bg-red-100 text-red-800",
-} as const;
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { token } = useAuth();
+  const { token, profile } = useAuth();
   const [order, setOrder] = useState<OrderDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusDraft, setStatusDraft] = useState("");
+  const [statusSaving, setStatusSaving] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token || !id) {
@@ -40,7 +33,11 @@ export default function OrderDetailPage() {
         const res = await fetch(marketApiUrl(`/orders/${id}`), { headers: bearerHeaders() });
         if (!res.ok) throw new Error(await res.text());
         const raw = await res.json();
-        if (!cancelled) setOrder(normalizeOrder(raw as Record<string, unknown>));
+        if (!cancelled) {
+          const normalized = normalizeOrder(raw as Record<string, unknown>);
+          setOrder(normalized);
+          setStatusDraft(normalized.status);
+        }
       } catch (e) {
         if (!cancelled) {
           setError(e instanceof Error ? e.message : "Не удалось загрузить заказ");
@@ -72,8 +69,10 @@ export default function OrderDetailPage() {
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto p-6 md:p-8">
-        <div className="h-8 w-48 bg-slate-200 rounded animate-pulse" />
+      <div className="max-w-3xl mx-auto p-6 md:p-8 space-y-4">
+        <div className="h-4 w-32 bg-slate-200 rounded animate-pulse" />
+        <div className="h-24 bg-slate-100 rounded-xl animate-pulse" />
+        <div className="h-40 bg-slate-100 rounded-xl animate-pulse" />
       </div>
     );
   }
@@ -89,7 +88,24 @@ export default function OrderDetailPage() {
     );
   }
 
-  const tone = orderStatusTone(order.status);
+  const role = profile?.role ?? "buyer";
+  const canManageStatus =
+    (role === "seller" || role === "admin") &&
+    (role === "admin" || order.user_id === profile?.user_id);
+
+  const handleStatusSave = async () => {
+    if (!order || statusDraft === order.status) return;
+    setStatusSaving(true);
+    setStatusError(null);
+    try {
+      await updateOrderStatus(order.id, statusDraft);
+      setOrder((prev) => (prev ? { ...prev, status: statusDraft } : prev));
+    } catch (e) {
+      setStatusError(e instanceof Error ? e.message : "Не удалось обновить статус");
+    } finally {
+      setStatusSaving(false);
+    }
+  };
 
   return (
     <div className="max-w-3xl mx-auto p-6 md:p-8">
@@ -97,14 +113,19 @@ export default function OrderDetailPage() {
         ← Мои заказы
       </Link>
 
-      <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
+      <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Заказ №{order.id}</h1>
           <p className="mt-1 text-slate-500 text-sm">{formatOrderDate(order.created_at)}</p>
+          {role === "admin" && order.user_id !== profile?.user_id ? (
+            <p className="mt-1 text-xs text-violet-700">Покупатель: ID {order.user_id}</p>
+          ) : null}
         </div>
-        <span className={`inline-flex rounded-full px-3 py-1 text-sm font-medium ${toneClasses[tone]}`}>
-          {orderStatusLabel(order.status)}
-        </span>
+        <OrderStatusBadge status={order.status} size="md" />
+      </div>
+
+      <div className="mb-8">
+        <OrderStatusTimeline status={order.status} />
       </div>
 
       <ul className="space-y-4">
@@ -112,6 +133,33 @@ export default function OrderDetailPage() {
           <OrderItemRow key={item.id} item={item} />
         ))}
       </ul>
+
+      {canManageStatus ? (
+        <div className="mt-8 p-5 rounded-xl bg-white border border-slate-100 shadow-sm">
+          <h2 className="text-sm font-semibold text-slate-900 mb-1">Изменить статус</h2>
+          <p className="text-xs text-slate-500 mb-4">Выберите новый этап обработки заказа</p>
+          {statusError ? (
+            <p className="mb-4 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+              {statusError}
+            </p>
+          ) : null}
+          <OrderStatusPicker
+            value={statusDraft}
+            onChange={setStatusDraft}
+            disabled={statusSaving}
+          />
+          <div className="mt-4 flex justify-end">
+            <button
+              type="button"
+              disabled={statusSaving || statusDraft === order.status}
+              onClick={handleStatusSave}
+              className="px-5 py-2.5 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60 transition-colors"
+            >
+              {statusSaving ? "Сохранение…" : "Сохранить статус"}
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-8 flex justify-end p-5 rounded-xl bg-white border border-slate-100 shadow-sm">
         <p className="text-lg font-semibold text-slate-900">

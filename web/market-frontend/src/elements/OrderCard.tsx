@@ -1,20 +1,8 @@
 import { Link } from "react-router-dom";
 import ResolvedImage from "./ResolvedImage.tsx";
+import OrderStatusBadge from "./OrderStatusBadge.tsx";
 import { formatRub } from "../lib/format.ts";
-import {
-  formatOrderDate,
-  orderPreviewImages,
-  orderStatusLabel,
-  orderStatusTone,
-  type OrderDTO,
-} from "../lib/orders.ts";
-
-const toneClasses = {
-  neutral: "bg-slate-100 text-slate-700",
-  active: "bg-sky-100 text-sky-800",
-  success: "bg-emerald-100 text-emerald-800",
-  danger: "bg-red-100 text-red-800",
-} as const;
+import { formatOrderDate, getOrderStatusMeta, orderPreviewImages, type OrderDTO } from "../lib/orders.ts";
 
 type Props = {
   order: OrderDTO;
@@ -22,24 +10,28 @@ type Props = {
 
 export default function OrderCard({ order }: Props) {
   const itemCount = order.items.reduce((s, i) => s + i.quantity, 0);
-  const tone = orderStatusTone(order.status);
   const previews = orderPreviewImages(order);
   const extraCount = Math.max(0, order.items.length - previews.length);
+  const meta = getOrderStatusMeta(order.status);
 
   return (
     <Link
       to={`/orders/${order.id}`}
-      className="block rounded-xl border border-slate-100 bg-white p-5 shadow-sm hover:border-slate-200 hover:shadow-md transition-all"
+      className="block rounded-xl border border-slate-100 bg-white p-5 shadow-sm hover:border-slate-200 hover:shadow-md transition-all group"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="font-semibold text-slate-900">Заказ №{order.id}</p>
+        <div className="min-w-0">
+          <p className="font-semibold text-slate-900 group-hover:text-emerald-800 transition-colors">
+            Заказ №{order.id}
+          </p>
           <p className="mt-1 text-sm text-slate-500">{formatOrderDate(order.created_at)}</p>
         </div>
-        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${toneClasses[tone]}`}>
-          {orderStatusLabel(order.status)}
-        </span>
+        <OrderStatusBadge status={order.status} size="sm" />
       </div>
+
+      {order.status !== "cancelled" ? (
+        <p className="mt-3 text-xs text-slate-500 line-clamp-1">{meta.description}</p>
+      ) : null}
 
       {previews.length > 0 ? (
         <div className="mt-4 flex items-center gap-2">

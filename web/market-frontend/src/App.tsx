@@ -7,7 +7,10 @@ import CategoriesPage from "./pages/CategoriesPage.tsx";
 import ProfilePage from "./pages/ProfilePage.tsx";
 import CartPage from "./pages/CartPage.tsx";
 import AddProductPage from "./pages/AddProductPage.tsx";
+import EditProductPage from "./pages/EditProductPage.tsx";
+import AdminPanel from "./pages/AdminPanel.tsx";
 import SellerPanel from "./widgets/SellerPanel.tsx";
+import RequireRole from "./auth/RequireRole.tsx";
 import ProductPage from "./pages/ProductPage.tsx";
 import LoginPage from "./pages/LoginPage.tsx";
 import CategoryPage from "./pages/CategoryPage.tsx";
@@ -31,9 +34,39 @@ function App() {
               <Route path="/orders/:id" element={<OrderDetailPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/cart" element={<CartPage />} />
-              <Route path="/seller-panel" element={<SellerPanel />} />
+              <Route
+                path="/seller-panel"
+                element={
+                  <RequireRole roles={["seller", "admin"]}>
+                    <SellerPanel />
+                  </RequireRole>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <RequireRole roles={["admin"]}>
+                    <AdminPanel />
+                  </RequireRole>
+                }
+              />
               <Route path="/product/:id" element={<ProductPage />} />
-              <Route path="/add" element={<AddProductPage />} />
+              <Route
+                path="/product/:id/edit"
+                element={
+                  <RequireRole roles={["seller", "admin"]}>
+                    <EditProductPage />
+                  </RequireRole>
+                }
+              />
+              <Route
+                path="/add"
+                element={
+                  <RequireRole roles={["seller", "admin"]}>
+                    <AddProductPage />
+                  </RequireRole>
+                }
+              />
             </Routes>
           </main>
           <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500">

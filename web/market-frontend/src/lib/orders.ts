@@ -1,3 +1,6 @@
+import { bearerHeaders } from "./api.ts";
+import { marketApiUrl } from "./endpoints.ts";
+
 export interface OrderItemDTO {
   id: number;
   product_id: number;
@@ -16,30 +19,95 @@ export interface OrderDTO {
   items: OrderItemDTO[];
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Ожидает",
-  processing: "В обработке",
-  shipped: "Отправлен",
-  delivered: "Доставлен",
-  cancelled: "Отменён",
+export const ORDER_STATUSES = [
+  "pending",
+  "processing",
+  "shipped",
+  "delivered",
+  "cancelled",
+] as const;
+
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
+/** Успешный путь доставки (для таймлайна). */
+export const ORDER_FLOW_STEPS = ["pending", "processing", "shipped", "delivered"] as const;
+
+export type OrderStatusTone = "amber" | "sky" | "violet" | "emerald" | "rose" | "slate";
+
+export type OrderStatusMeta = {
+  label: string;
+  description: string;
+  tone: OrderStatusTone;
+  /** Индекс в ORDER_FLOW_STEPS или null (отмена / неизвестный). */
+  flowIndex: number | null;
 };
 
-export function orderStatusLabel(status: string): string {
-  return STATUS_LABELS[status] ?? status;
+const STATUS_META: Record<string, OrderStatusMeta> = {
+  pending: {
+    label: "Ожидает",
+    description: "Заказ принят и ждёт обработки",
+    tone: "amber",
+    flowIndex: 0,
+  },
+  processing: {
+    label: "В обработке",
+    description: "Собираем и готовим к отправке",
+    tone: "sky",
+    flowIndex: 1,
+  },
+  shipped: {
+    label: "Отправлен",
+    description: "Передан в доставку",
+    tone: "violet",
+    flowIndex: 2,
+  },
+  delivered: {
+    label: "Доставлен",
+    description: "Заказ получен",
+    tone: "emerald",
+    flowIndex: 3,
+  },
+  cancelled: {
+    label: "Отменён",
+    description: "Заказ отменён",
+    tone: "rose",
+    flowIndex: null,
+  },
+};
+
+const FALLBACK_META: OrderStatusMeta = {
+  label: "Неизвестно",
+  description: "",
+  tone: "slate",
+  flowIndex: null,
+};
+
+export function getOrderStatusMeta(status: string): OrderStatusMeta {
+  return STATUS_META[status] ?? { ...FALLBACK_META, label: status };
 }
 
+export function orderStatusLabel(status: string): string {
+  return getOrderStatusMeta(status).label;
+}
+
+/** @deprecated Используйте getOrderStatusMeta().tone */
 export function orderStatusTone(status: string): "neutral" | "active" | "success" | "danger" {
-  switch (status) {
-    case "delivered":
+  const tone = getOrderStatusMeta(status).tone;
+  switch (tone) {
+    case "emerald":
       return "success";
-    case "cancelled":
+    case "rose":
       return "danger";
-    case "processing":
-    case "shipped":
+    case "sky":
+    case "violet":
       return "active";
     default:
       return "neutral";
   }
+}
+
+export function isOrderFlowStatus(status: string): status is (typeof ORDER_FLOW_STEPS)[number] {
+  return (ORDER_FLOW_STEPS as readonly string[]).includes(status);
 }
 
 function pick<T>(obj: Record<string, unknown>, ...keys: string[]): T | undefined {
@@ -110,6 +178,35 @@ export function normalizeOrder(raw: Record<string, unknown>): OrderDTO {
 export function normalizeOrders(raw: unknown): OrderDTO[] {
   if (!Array.isArray(raw)) return [];
   return raw.map((o) => normalizeOrder(o as Record<string, unknown>));
+}
+
+export async function fetchOrders(userId?: number): Promise<OrderDTO[]> {
+  const qs = userId != null && userId > 0 ? `?user_id=${userId}` : "";
+  const res = await fetch(marketApiUrl(`/orders${qs}`), {
+    headers: { Accept: "application/json", ...bearerHeaders() },
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(text || `Ошибка ${res.status}`);
+  }
+  const raw = JSON.parse(text) as unknown;
+  return normalizeOrders(raw);
+}
+
+export async function updateOrderStatus(orderId: number, status: string): Promise<void> {
+  const res = await fetch(marketApiUrl(`/orders/${orderId}`), {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      ...bearerHeaders(),
+    },
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || `Ошибка ${res.status}`);
+  }
 }
 
 export function formatOrderDate(iso: string): string {
