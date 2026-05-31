@@ -33,6 +33,38 @@ services:
     networks:
       - app_net
 
+  auth-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: auth_user
+      POSTGRES_PASSWORD: strong_password
+      POSTGRES_DB: auth_db
+    volumes:
+      - auth_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auth_user -d auth_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_net
+
+  auth-migrator:
+    build:
+      context: ./services/auth
+      dockerfile: Dockerfile.migrate
+    command:
+      - "-path"
+      - "/migrations"
+      - "-database"
+      - "postgres://auth_user:strong_password@auth-postgres:5432/auth_db?sslmode=disable"
+      - "up"
+    depends_on:
+      auth-postgres:
+        condition: service_healthy
+    networks:
+      - app_net
+
   market:
     build: .
     restart: always
@@ -54,6 +86,28 @@ services:
     networks:
       - app_net
 
+  auth-service:
+    build:
+      context: ./services/auth
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      auth-postgres:
+        condition: service_healthy
+      auth-migrator:
+        condition: service_completed_successfully
+    expose:
+      - "8081"
+    environment:
+      DB_HOST: auth-postgres
+      DB_PORT: 5432
+      DB_USER: auth_user
+      DB_PASSWORD: strong_password
+      DB_NAME: auth_db
+      JWT_SECRET: superSecret
+    networks:
+      - app_net
+
   nginx:
     build:
       context: ./web/market-frontend
@@ -62,6 +116,7 @@ services:
       - "80:80"
     depends_on:
       - market
+      - auth-service
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
@@ -73,3 +128,4 @@ networks:
 
 volumes:
   postgres_data:
+  auth_postgres_data:
