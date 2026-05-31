@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: store_usr
       POSTGRES_PASSWORD: password132
@@ -18,7 +18,7 @@ services:
       - app_net
 
   migrator:
-    image: migrate/migrate:v4.18.3
+    image: migrate/migrate:v4.19.1
     command:
       - "-path"
       - "/migrations"

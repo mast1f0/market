@@ -26,4 +26,4 @@ COPY --from=builder /app/srv /app/srv
 
 EXPOSE 8080
 
-CMD ["./srv", " -seed"]
+CMD ["./srv", "-seed"]
