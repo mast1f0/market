@@ -1,0 +1,75 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: store_usr
+      POSTGRES_PASSWORD: password132
+      POSTGRES_DB: store_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U store_usr -d store_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_net
+
+  migrator:
+    image: migrate/migrate:v4.18.3
+    command:
+      - "-path"
+      - "/migrations"
+      - "-database"
+      - "postgres://store_usr:password132@postgres:5432/store_db?sslmode=disable"
+      - "up"
+    volumes:
+      - ./migrations:/migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app_net
+
+  market:
+    build: .
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+    expose:
+      - "8080"
+    environment:
+      DB_USER: store_usr
+      DB_PASSWORD: password132
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: store_db
+      DB_SSLMODE: disable
+      JWT_SECRET: superSecret
+    networks:
+      - app_net
+
+  nginx:
+    build:
+      context: ./web/market-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - market
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - app_net
+
+networks:
+  app_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
