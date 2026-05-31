@@ -30,7 +30,7 @@ func main() {
 
 	if *seedFlag {
 		seed2.SeedCategories(categoryRepository)
-		seed2.SeedProducts(productRepository, categoryRepository)
+		seed2.SeedProducts(productRepository)
 	}
 	productService := service.NewProductService(productRepository, categoryRepository)
 	categoryService := service.NewCategoryService(categoryRepository)
