@@ -1,7 +1,9 @@
 package orm
 
 import (
+	"errors"
 	"market/internal/core/domain"
+	"market/internal/core/ports"
 
 	"gorm.io/gorm"
 )
@@ -40,7 +42,10 @@ func (r *OrderRepository) GetOrderById(id int64) (*domain.Order, error) {
 	var order domain.Order
 	err := r.db.Preload("Items.Product").Where("id = ?", id).First(&order).Error
 	if err != nil {
-		return nil, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ports.ErrOrderNotFound
+		}
+		return nil, ports.ErrFailedToLoadOrder
 	}
 	ensureOrderItems(&order)
 	return &order, nil
@@ -49,7 +54,10 @@ func (r *OrderRepository) GetOrderByUserId(userId int64) ([]domain.Order, error)
 	orders := make([]domain.Order, 0)
 	err := r.db.Preload("Items.Product").Where("user_id = ?", userId).Order("created_at DESC").Find(&orders).Error
 	if err != nil {
-		return nil, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ports.ErrOrderNotFound
+		}
+		return nil, ports.ErrFailedToLoadOrder
 	}
 	for i := range orders {
 		ensureOrderItems(&orders[i])
@@ -60,20 +68,27 @@ func (r *OrderRepository) AddOrderItems(orderId int64, items []domain.OrderItem)
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		var order domain.Order
 		if err := tx.First(&order, orderId).Error; err != nil {
-			return err
+			return ports.ErrOrderNotFound
 		}
 		for i := range items {
 			items[i].OrderID = orderId
 		}
 		if err := tx.Create(&items).Error; err != nil {
-			return err
+			return ports.ErrFailedToSaveOrder
 		}
 
 		return nil
 	})
 }
 func (r *OrderRepository) UpdateOrderStatus(orderId int64, status string) error {
-	return r.db.Model(&domain.Order{}).
+	err := r.db.Model(&domain.Order{}).
 		Where("id = ?", orderId).
 		Update("status", status).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ports.ErrOrderNotFound
+		}
+		return ports.ErrFailedToSaveOrder
+	}
+	return nil
 }

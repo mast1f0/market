@@ -27,23 +27,26 @@ func (h *OrderHandler) GetOrderByUser(w http.ResponseWriter, r *http.Request) {
 		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
 		return
 	}
-	role, _ := r.Context().Value("role").(string)
+	role, ok := r.Context().Value("role").(string)
+	if !ok {
+		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user role")
+		return
+	}
 
 	targetUserID := userID
 	if role == "admin" {
-		if q := r.URL.Query().Get("user_id"); q != "" {
-			parsed, err := strconv.ParseInt(q, 10, 64)
-			if err != nil || parsed < 1 {
-				helpers.RespondError(w, http.StatusBadRequest, "invalid user_id")
-				return
-			}
-			targetUserID = parsed
+		idStr := chi.URLParam(r, "id")
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			helpers.RespondError(w, http.StatusBadRequest, "invalid user id")
+			return
 		}
+		targetUserID = id
 	}
 
 	orders, err := h.service.GetByUserId(targetUserID)
 	if err != nil {
-		helpers.RespondError(w, http.StatusBadRequest, "cannot get orders")
+		helpers.RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	helpers.RespondJSON(w, http.StatusOK, orders)
@@ -58,18 +61,18 @@ func (h *OrderHandler) GetOrderById(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		helpers.RespondError(w, http.StatusBadRequest, "cannot get order")
+		helpers.RespondError(w, http.StatusBadRequest, "cannot get order id")
 		return
 	}
 	order, err := h.service.GetOrderById(id)
 	if err != nil {
-		helpers.RespondError(w, http.StatusNotFound, "cannot get order")
+		helpers.RespondError(w, http.StatusNotFound, err.Error())
 		return
 	}
 	if order.UserID != userID {
 		role, _ := r.Context().Value("role").(string)
 		if role != "admin" {
-			helpers.RespondError(w, http.StatusForbidden, "cannot get order")
+			helpers.RespondError(w, http.StatusForbidden, "Forbidden")
 			return
 		}
 	}
@@ -85,7 +88,7 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	}
 	order, err := h.service.CreateFromCart(userID)
 	if err != nil {
-		helpers.RespondError(w, http.StatusBadRequest, "cannot create order")
+		helpers.RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	helpers.RespondJSON(w, http.StatusCreated, order)
@@ -116,7 +119,7 @@ func (h *OrderHandler) UpdateOrder(w http.ResponseWriter, r *http.Request) {
 	}
 	err = h.service.UpdateStatus(id, req.Status, userID, role)
 	if err != nil {
-		helpers.RespondError(w, http.StatusInternalServerError, "cannot update order")
+		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	helpers.RespondJSON(w, http.StatusOK, map[string]string{

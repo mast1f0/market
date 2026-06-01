@@ -6,6 +6,14 @@ import (
 	"market/internal/core/ports"
 )
 
+var (
+	ErrOrderNotFound     = errors.New("order not found")
+	ErrFailedToLoadOrder = errors.New("failed to load order")
+	ErrInvalidOrderId    = errors.New("invalid order id")
+	ErrFailedToSaveOrder = errors.New("failed to save order")
+	ErrEmptyCart         = errors.New("cart is empty")
+)
+
 type OrderService struct {
 	orderRepo ports.OrderRepository
 	cartRepo  ports.CartRepository
@@ -22,31 +30,64 @@ func NewOrderService(
 }
 
 func (s *OrderService) GetOrderById(orderId int64) (*domain.Order, error) {
-	return s.orderRepo.GetOrderById(orderId)
+	if orderId < 0 {
+		return nil, ErrInvalidOrderId
+	}
+	order, err := s.orderRepo.GetOrderById(orderId)
+	if err != nil {
+		if errors.Is(err, ports.ErrOrderNotFound) {
+			return nil, ErrOrderNotFound
+		}
+		return nil, ErrFailedToLoadOrder
+	}
+	return order, nil
 }
 func (s *OrderService) GetByUserId(userId int64) ([]domain.Order, error) {
-	return s.orderRepo.GetOrderByUserId(userId)
+	if userId < 0 {
+		return nil, ErrInvalidUserID
+	}
+	orders, err := s.orderRepo.GetOrderByUserId(userId)
+	if err != nil {
+		if errors.Is(err, ports.ErrOrderNotFound) {
+			return nil, ErrOrderNotFound
+		}
+		return nil, ErrFailedToLoadOrder
+	}
+	return orders, nil
 }
 
 func (s *OrderService) UpdateStatus(orderId int64, status string, userID int64, role string) error {
 	order, err := s.GetOrderById(orderId)
 	if err != nil {
-		return err
+		if errors.Is(err, ports.ErrOrderNotFound) {
+			return ErrOrderNotFound
+		}
+		return ErrFailedToLoadOrder
 	}
 	if order.UserID != userID && role != "admin" {
-		return errors.New("forbidden")
+		return ErrForbidden
 	}
-	return s.orderRepo.UpdateOrderStatus(orderId, status)
+	err = s.orderRepo.UpdateOrderStatus(orderId, status)
+	if err != nil {
+		if errors.Is(err, ports.ErrOrderNotFound) {
+			return ErrOrderNotFound
+		}
+		return ErrFailedToSaveOrder
+	}
+	return nil
 }
 
 func (s *OrderService) CreateFromCart(userId int64) (*domain.Order, error) {
 	cart, err := s.cartRepo.GetCartWithItems(userId)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, ports.ErrCartNotFound) {
+			return nil, ErrCartNotFound
+		}
+		return nil, ErrFailedToSaveOrder
 	}
 
 	if len(cart.Items) == 0 {
-		return nil, errors.New("no items in cart")
+		return nil, ErrEmptyCart
 	}
 
 	var totalPrice float64
