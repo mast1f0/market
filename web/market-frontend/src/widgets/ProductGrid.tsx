@@ -5,6 +5,21 @@ import { fetchJson } from "../lib/api.ts";
 import { useAddToCart } from "../hooks/useAddToCart.ts";
 import type { Product } from "../types/catalog.ts";
 
+function normalizeProduct(raw: unknown): Product {
+  const data = (raw ?? {}) as Record<string, unknown>;
+  return {
+    id: Number(data.id ?? 0),
+    owner_id: data.owner_id != null ? Number(data.owner_id) : undefined,
+    name: String(data.name ?? ""),
+    description: String(data.description ?? ""),
+    price: Number(data.price ?? 0),
+    category_id: data.category_id != null ? Number(data.category_id) : undefined,
+    image_url: String(data.image_url ?? data.imageUrl ?? data.ImageURL ?? ""),
+    stock: data.stock != null ? Number(data.stock) : undefined,
+    created_at: data.created_at != null ? String(data.created_at) : undefined,
+  };
+}
+
 export default function ProductGrid() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,9 +34,9 @@ export default function ProductGrid() {
 
     (async () => {
       try {
-        const data = await fetchJson<Product[]>("/products");
+        const data = await fetchJson<unknown[]>("/products");
         if (!cancelled) {
-          setProducts(Array.isArray(data) ? data : []);
+          setProducts(Array.isArray(data) ? data.map(normalizeProduct) : []);
           setError(null);
         }
       } catch (e) {
@@ -68,7 +83,7 @@ export default function ProductGrid() {
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {products.map((product) => (
-            <div key={product.id} className="relative">
+            <div key={product.id} className="relative h-full">
               {addedId === product.id ? (
                 <span className="absolute top-2 right-2 z-10 text-xs font-medium bg-emerald-600 text-white px-2 py-1 rounded-md">
                   В корзине

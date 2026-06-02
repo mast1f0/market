@@ -61,16 +61,23 @@ func (r *ProductRepository) GetProductById(id int64) (*domain.Product, error) {
 
 func (r *ProductRepository) DeleteProduct(id int64) error {
 	query := `DELETE FROM products WHERE id = $1;`
-	_, err := r.db.Exec(query, id)
+	res, err := r.db.Exec(query, id)
 	if err != nil {
+		return ports.ErrNotFound
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return ports.ErrNotFound
+	}
+	if rows == 0 {
 		return ports.ErrNotFound
 	}
 	return nil
 }
 
 func (r *ProductRepository) CreateProduct(product *domain.Product) (*domain.Product, error) {
-	query := `INSERT INTO products(id, owner_id, name, description, price, category_id, stock, image_url, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
-	err := r.db.QueryRow(query, product.ID, product.OwnerID, product.Name, product.Description, product.Price, product.CategoryID, product.Stock, product.ImageURL, product.CreatedAt).Scan(&product.ID)
+	query := `INSERT INTO products(owner_id, name, description, price, category_id, stock, image_url, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, created_at`
+	err := r.db.QueryRow(query, product.OwnerID, product.Name, product.Description, product.Price, product.CategoryID, product.Stock, product.ImageURL, product.CreatedAt).Scan(&product.ID, &product.CreatedAt)
 	if err != nil {
 		var pqErr *pq.Error
 

@@ -5,6 +5,21 @@ import { fetchJson } from "../lib/api.ts";
 import { useAddToCart } from "../hooks/useAddToCart.ts";
 import type { Product } from "../types/catalog.ts";
 
+function normalizeProduct(raw: unknown): Product {
+  const data = (raw ?? {}) as Record<string, unknown>;
+  return {
+    id: Number(data.id ?? 0),
+    owner_id: data.owner_id != null ? Number(data.owner_id) : undefined,
+    name: String(data.name ?? ""),
+    description: String(data.description ?? ""),
+    price: Number(data.price ?? 0),
+    category_id: data.category_id != null ? Number(data.category_id) : undefined,
+    image_url: String(data.image_url ?? data.imageUrl ?? data.ImageURL ?? ""),
+    stock: data.stock != null ? Number(data.stock) : undefined,
+    created_at: data.created_at != null ? String(data.created_at) : undefined,
+  };
+}
+
 export default function CategoryPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -21,9 +36,9 @@ export default function CategoryPage() {
 
     (async () => {
       try {
-        const data = await fetchJson<Product[]>(`/categories/${id}`);
+        const data = await fetchJson<unknown[]>(`/categories/${id}`);
         if (!cancelled) {
-          setProducts(Array.isArray(data) ? data : []);
+          setProducts(Array.isArray(data) ? data.map(normalizeProduct) : []);
           setError(null);
         }
       } catch (e) {
@@ -77,15 +92,16 @@ export default function CategoryPage() {
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              name={product.name}
-              description={product.description}
-              price={product.price}
-              imageUrl={product.image_url}
-              onClick={() => navigate(`/product/${product.id}`)}
-              onAddToCart={() => addToCart(product.id)}
-            />
+            <div key={product.id} className="h-full">
+              <ProductCard
+                name={product.name}
+                description={product.description}
+                price={product.price}
+                imageUrl={product.image_url}
+                onClick={() => navigate(`/product/${product.id}`)}
+                onAddToCart={() => addToCart(product.id)}
+              />
+            </div>
           ))}
         </div>
       )}

@@ -193,7 +193,7 @@ func (r *CartRepository) UpdateCartItem(itemId int64, quantity int) (*domain.Car
 	err := row.Scan(&item.ID, &item.CartID, &item.ProductID, &item.Quantity,
 		&item.PriceSnapshot, &item.CreatedAt, &item.UpdatedAt)
 	if err != nil {
-		if errors.Is(row.Err(), sql.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ports.ErrCartItemNotFound
 		}
 		return nil, ports.ErrFailedToUpdateCartItem

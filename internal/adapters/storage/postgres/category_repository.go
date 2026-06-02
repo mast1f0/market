@@ -150,7 +150,7 @@ func (r *CategoryRepository) GetCategoryByName(name string) (*domain.Category, e
 
 func (r *CategoryRepository) ProductsByCategory(id int64) ([]domain.Product, error) {
 	query := `
-		SELECT id, name, price, category_id
+		SELECT id, name, price, category_id, 
 		FROM products
 		WHERE category_id = $1
 	`

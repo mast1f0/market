@@ -14,7 +14,7 @@ function isDirectImageSource(raw: string): boolean {
 
 type Props = {
   /** Полный URL, data URL или id объекта в minio-link-service. */
-  imageRef: string;
+  imageRef?: string | null;
   alt?: string;
   className?: string;
 };
@@ -55,5 +55,12 @@ export default function ResolvedImage({ imageRef, alt = "", className }: Props) 
     };
   }, [imageRef]);
 
-  return <img src={src} alt={alt} className={className} />;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      onError={() => setSrc(PLACEHOLDER)}
+    />
+  );
 }
