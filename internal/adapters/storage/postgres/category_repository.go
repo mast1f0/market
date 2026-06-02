@@ -150,7 +150,7 @@ func (r *CategoryRepository) GetCategoryByName(name string) (*domain.Category, e
 
 func (r *CategoryRepository) ProductsByCategory(id int64) ([]domain.Product, error) {
 	query := `
-		SELECT id, name, price, category_id, 
+		SELECT id, name, price, category_id, image_url
 		FROM products
 		WHERE category_id = $1
 	`
@@ -165,7 +165,7 @@ func (r *CategoryRepository) ProductsByCategory(id int64) ([]domain.Product, err
 
 	for rows.Next() {
 		var p domain.Product
-		if err := rows.Scan(&p.ID, &p.Name, &p.Price, &p.CategoryID); err != nil {
+		if err := rows.Scan(&p.ID, &p.Name, &p.Price, &p.CategoryID, &p.ImageURL); err != nil {
 			return nil, err
 		}
 		products = append(products, p)

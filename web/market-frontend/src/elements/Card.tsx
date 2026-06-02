@@ -36,10 +36,10 @@ export default function ProductCard({
           }}
           className="cursor-pointer w-full h-full bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md hover:border-slate-200 transition-all duration-200 flex flex-col"
       >
-        <div className="w-full h-48 bg-slate-100 flex items-center justify-center">
+        <div className="w-full h-48 bg-white flex items-center justify-center">
           <ResolvedImage
               imageRef={imageUrl}
-              className="w-full h-full object-contain bg-slate-100 pointer-events-none"
+              className="w-full h-full object-contain bg-white pointer-events-none"
           />
         </div>
 
