@@ -20,6 +20,6 @@ type CategoryRepository interface {
 	DeleteCategory(id int64) error
 	GetCategory(id int64) (*domain.Category, error)
 	GetCategoryByName(name string) (*domain.Category, error)
-	GetCategories() []domain.Category
+	GetCategories() ([]domain.Category, error)
 	ProductsByCategory(id int64) ([]domain.Product, error)
 }

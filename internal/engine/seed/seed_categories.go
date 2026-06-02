@@ -2,11 +2,11 @@ package seed
 
 import (
 	"log"
-	"market/internal/adapters/storage/orm"
 	"market/internal/core/domain"
+	"market/internal/core/ports"
 )
 
-func SeedCategories(db *orm.CategoryRepository) {
+func SeedCategories(db ports.CategoryRepository) {
 	categories := []domain.Category{
 		{Name: "Электроника"},
 		{Name: "Одежда"},

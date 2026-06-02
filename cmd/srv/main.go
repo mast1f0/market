@@ -6,7 +6,7 @@ import (
 	http2 "market/internal/adapters/http"
 	"market/internal/adapters/http/handlers"
 	jwtutil "market/internal/adapters/jwt"
-	"market/internal/adapters/storage/orm"
+	"market/internal/adapters/storage/postgres"
 	"market/internal/core/service"
 	"market/internal/engine/config"
 	"market/internal/engine/logger"
@@ -22,11 +22,12 @@ func main() {
 	seedFlag := flag.Bool("seed", false, "run seed")
 	flag.Parse()
 
-	db := orm.NewConnection(cfg)
-	productRepository := orm.NewProductRepository(db)
-	categoryRepository := orm.NewCategoryRepository(db)
-	cartRepository := orm.NewCartRepository(db)
-	orderRepository := orm.NewOrderRepository(db)
+	db, err := postgres.NewConnection(cfg)
+
+	productRepository := postgres.NewProductRepository(db)
+	categoryRepository := postgres.NewCategoryRepository(db)
+	cartRepository := postgres.NewCartRepository(db)
+	orderRepository := postgres.NewOrderRepository(db)
 
 	if *seedFlag {
 		seed2.SeedCategories(categoryRepository)

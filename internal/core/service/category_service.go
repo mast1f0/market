@@ -81,7 +81,7 @@ func (s *CategoryService) GetCategoryByName(name string) (*domain.Category, erro
 	return category, nil
 }
 
-func (s *CategoryService) GetCategories() []domain.Category {
+func (s *CategoryService) GetCategories() ([]domain.Category, error) {
 	return s.repository.GetCategories()
 }
 

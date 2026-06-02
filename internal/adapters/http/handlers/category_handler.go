@@ -96,7 +96,11 @@ func (h *CategoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *CategoryHandler) ListCategories(w http.ResponseWriter, r *http.Request) {
-	categories := h.service.GetCategories()
+	categories, err := h.service.GetCategories()
+	if err != nil {
+		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 	helpers.RespondJSON(w, http.StatusOK, categories)
 }
 
