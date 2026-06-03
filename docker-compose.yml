@@ -108,6 +108,22 @@ services:
     networks:
       - app_net
 
+  images-service:
+    build:
+      context: ./services/images
+      dockerfile: Dockerfile
+    restart: always
+    expose:
+      - "8082"
+    environment:
+      MINIO_ENDPOINT: minio.localhost:9000
+      MINIO_EXTERNAL_URL: http://minio.localhost:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+
+    networks:
+      - app_net
+
   nginx:
     build:
       context: ./web/market-frontend
