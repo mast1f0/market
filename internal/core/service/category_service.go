@@ -26,6 +26,9 @@ func NewCategoryService(repository ports.CategoryRepository) *CategoryService {
 }
 
 func (s *CategoryService) GetCategory(id int64) (*domain.Category, error) {
+	if id < 1 {
+		return nil, ErrInvalidCategoryID
+	}
 	category, err := s.repository.GetCategory(id)
 	if err != nil {
 		if errors.Is(err, ports.ErrCategoryNotFound) {
