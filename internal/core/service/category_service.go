@@ -26,7 +26,7 @@ func NewCategoryService(repository ports.CategoryRepository) *CategoryService {
 }
 
 func (s *CategoryService) GetCategory(id int64) (*domain.Category, error) {
-	if id < 1 {
+	if id < 0 {
 		return nil, ErrInvalidCategoryID
 	}
 	category, err := s.repository.GetCategory(id)
@@ -61,7 +61,7 @@ func (s *CategoryService) UpdateCategory(category *domain.Category) (*domain.Cat
 	return newCategory, nil
 }
 func (s *CategoryService) DeleteCategory(id int64) error {
-	if id < 1 {
+	if id < 0 {
 		return ErrInvalidCategoryID
 	}
 	err := s.repository.DeleteCategory(id)
@@ -89,7 +89,7 @@ func (s *CategoryService) GetCategories() ([]domain.Category, error) {
 }
 
 func (s *CategoryService) GetCategoriesByCategoryID(id int64) ([]domain.Product, error) {
-	if id < 1 {
+	if id < 0 {
 		return nil, ErrInvalidCategoryID
 	}
 	products, err := s.repository.ProductsByCategory(id)

@@ -30,7 +30,7 @@ func NewOrderService(
 }
 
 func (s *OrderService) GetOrderById(orderId int64) (*domain.Order, error) {
-	if orderId < 1 {
+	if orderId < 0 {
 		return nil, ErrInvalidOrderId
 	}
 	order, err := s.orderRepo.GetOrderById(orderId)
@@ -43,7 +43,7 @@ func (s *OrderService) GetOrderById(orderId int64) (*domain.Order, error) {
 	return order, nil
 }
 func (s *OrderService) GetByUserId(userId int64) ([]domain.Order, error) {
-	if userId < 1 {
+	if userId < 0 {
 		return nil, ErrInvalidUserID
 	}
 	orders, err := s.orderRepo.GetOrderByUserId(userId)
@@ -57,10 +57,10 @@ func (s *OrderService) GetByUserId(userId int64) ([]domain.Order, error) {
 }
 
 func (s *OrderService) UpdateStatus(orderId int64, status string, userID int64, role string) error {
-	if userID < 1 {
+	if userID < 0 {
 		return ErrInvalidUserID
 	}
-	if orderId < 1 {
+	if orderId < 0 {
 		return ErrInvalidOrderId
 	}
 	order, err := s.GetOrderById(orderId)
@@ -84,7 +84,7 @@ func (s *OrderService) UpdateStatus(orderId int64, status string, userID int64, 
 }
 
 func (s *OrderService) CreateFromCart(userId int64) (*domain.Order, error) {
-	if userId < 1 {
+	if userId < 0 {
 		return nil, ErrInvalidUserID
 	}
 	cart, err := s.cartRepo.GetCartWithItems(userId)

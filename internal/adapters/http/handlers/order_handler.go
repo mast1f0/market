@@ -35,13 +35,15 @@ func (h *OrderHandler) GetOrderByUser(w http.ResponseWriter, r *http.Request) {
 
 	targetUserID := userID
 	if role == "admin" {
-		idStr := chi.URLParam(r, "id")
-		id, err := strconv.ParseInt(idStr, 10, 64)
-		if err != nil {
-			helpers.RespondError(w, http.StatusBadRequest, "invalid user id")
-			return
+		idStr := r.URL.Query().Get("user_id")
+		if idStr != "" {
+			id, err := strconv.ParseInt(idStr, 10, 64)
+			if err != nil || id < 1 {
+				helpers.RespondError(w, http.StatusBadRequest, "invalid user id")
+				return
+			}
+			targetUserID = id
 		}
-		targetUserID = id
 	}
 
 	orders, err := h.service.GetByUserId(targetUserID)

@@ -25,7 +25,7 @@ func NewProductService(productRepo ports.ProductRepository, categoryRepo ports.C
 }
 
 func (s *ProductService) GetProductById(id int64) (*domain.Product, error) {
-	if id < 1 {
+	if id < 0 {
 		return nil, ErrInvalidProductID
 	}
 	product, err := s.productRepository.GetProductById(id)
@@ -69,7 +69,7 @@ func (s *ProductService) UpdateProduct(newProduct *domain.Product, role string) 
 }
 
 func (s *ProductService) DeleteProduct(id int64, userId int64, role string) error {
-	if id < 1 {
+	if id < 0 {
 		return ErrInvalidProductID
 	}
 	product, err := s.productRepository.GetProductById(id)
@@ -92,7 +92,7 @@ func (s *ProductService) GetAllProducts() ([]domain.Product, error) {
 }
 
 func (s *ProductService) GetProduct(id int64) (*domain.Product, error) {
-	if id < 1 {
+	if id < 0 {
 		return nil, ErrInvalidProductID
 	}
 	product, err := s.productRepository.GetProductById(id)

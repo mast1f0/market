@@ -51,7 +51,7 @@ func NewCartService(cartRepo ports.CartRepository, productRepo ports.ProductRepo
 }
 
 func (s *CartService) GetCartWithItems(userID int64) (*domain.Cart, error) {
-	if userID < 1 {
+	if userID < 0 {
 		return nil, ErrInvalidUserID
 	}
 	item, err := s.repo.GetCartWithItems(userID)
@@ -75,10 +75,10 @@ func (s *CartService) FindCartItem(cartID, productID int64) (*domain.CartItem, e
 }
 
 func (s *CartService) DeleteCartItem(userId int64, productId int64) error {
-	if userId < 1 {
+	if userId < 0 {
 		return ErrInvalidUserID
 	}
-	if productId < 1 {
+	if productId < 0 {
 		return ErrInvalidProduct
 	}
 	err := s.repo.DeleteCartItem(userId, productId)
@@ -134,7 +134,7 @@ func (s *CartService) AddCartItem(userID int64, cartItem *domain.CartItem) (*dom
 }
 
 func (s *CartService) ClearCart(userID int64) error {
-	if userID < 1 {
+	if userID < 0 {
 		return ErrInvalidUserID
 	}
 	err := s.repo.ClearCart(userID)

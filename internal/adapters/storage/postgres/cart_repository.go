@@ -77,7 +77,8 @@ func (r *CartRepository) GetCartWithItems(userID int64) (*domain.Cart, error) {
             p.id,
             p.name,
             p.price,
-            COALESCE(p.description, '')
+            COALESCE(p.description, ''),
+            COALESCE(p.image_url, '')
         FROM cart_items ci
         LEFT JOIN products p ON p.id = ci.product_id
         WHERE ci.cart_id = $1
@@ -105,7 +106,7 @@ func (r *CartRepository) GetCartWithItems(userID int64) (*domain.Cart, error) {
 
 		err := rows.Scan(
 			&item.ID, &item.ProductID, &item.Quantity, &priceSnapshot,
-			&product.ID, &product.Name, &product.Price, &product.Description,
+			&product.ID, &product.Name, &product.Price, &product.Description, &product.ImageURL,
 		)
 		if err != nil {
 			return nil, ports.ErrFailedToLoadCart
