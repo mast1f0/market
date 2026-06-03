@@ -90,7 +90,7 @@ services:
     build:
       context: ./services/auth
       dockerfile: Dockerfile
-    restart: always
+    restart: on-failure
     depends_on:
       auth-postgres:
         condition: service_healthy
@@ -108,11 +108,38 @@ services:
     networks:
       - app_net
 
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_SERVER_URL: http://minio.localhost:9000
+      MINIO_BROWSER_REDIRECT_URL: http://localhost:9001
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: always
+    networks:
+      - app_net
+
   images-service:
     build:
       context: ./services/images
       dockerfile: Dockerfile
     restart: always
+    extra_hosts:
+      - "minio.localhost:host-gateway"
+    depends_on:
+      minio:
+        condition: service_healthy
     expose:
       - "8082"
     environment:
@@ -120,7 +147,8 @@ services:
       MINIO_EXTERNAL_URL: http://minio.localhost:9000
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
-
+      MINIO_BUCKET: product-images
+      MINIO_REGION: us-east-1
     networks:
       - app_net
 
@@ -145,3 +173,4 @@ networks:
 volumes:
   postgres_data:
   auth_postgres_data:
+  minio_data:

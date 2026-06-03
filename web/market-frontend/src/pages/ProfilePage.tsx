@@ -62,6 +62,8 @@ export default function ProfilePage() {
     return () => window.clearTimeout(t);
   }, [justOrdered, searchParams, setSearchParams]);
 
+  const filteredOrders = useMemo(() => filterOrders(orders, orderQuery), [orders, orderQuery]);
+
   if (!token) {
     return (
       <div className="max-w-3xl mx-auto p-6 md:p-8">
@@ -90,8 +92,6 @@ export default function ProfilePage() {
   const isSeller = role === "seller" || role === "admin";
   const isAdmin = role === "admin";
   const initial = (displayLogin?.[0] ?? "U").toUpperCase();
-
-  const filteredOrders = useMemo(() => filterOrders(orders, orderQuery), [orders, orderQuery]);
 
   return (
     <div className="max-w-3xl mx-auto p-6 md:p-8">

@@ -91,10 +91,13 @@ export default function ProductPage() {
       </Link>
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        <ResolvedImage
-          imageRef={product.image_url}
-          className="w-full h-64 md:h-96 object-cover bg-slate-100"
-        />
+        <div className="flex h-64 md:h-80 items-center justify-center bg-slate-50 p-4 md:p-6">
+          <ResolvedImage
+            imageRef={product.image_url}
+            alt={product.name}
+            className="max-h-full max-w-full object-contain"
+          />
+        </div>
 
         <div className="p-6 md:p-8">
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{product.name}</h1>
