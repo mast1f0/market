@@ -2,19 +2,20 @@ package mock
 
 import "market/internal/core/domain"
 
-//заглушечка
-
 type CategoryRepoMock struct {
+	CreateCategoryByName func(category string) (*domain.Category, error)
+	UpdateCategoryName   func(category *domain.Category) (*domain.Category, error)
+	DeleteCategoryById   func(id int64) error
 }
 
 func (r *CategoryRepoMock) CreateCategory(category string) (*domain.Category, error) {
-	return &domain.Category{}, nil
+	return r.CreateCategoryByName(category)
 }
 func (r *CategoryRepoMock) UpdateCategory(category *domain.Category) (*domain.Category, error) {
-	return &domain.Category{}, nil
+	return r.UpdateCategoryName(category)
 }
 func (r *CategoryRepoMock) DeleteCategory(id int64) error {
-	return nil
+	return r.DeleteCategoryById(id)
 }
 func (r *CategoryRepoMock) GetCategory(id int64) (*domain.Category, error) {
 	return &domain.Category{}, nil

@@ -54,6 +54,9 @@ func (s *CategoryService) CreateCategory(categoryName string) (*domain.Category,
 }
 
 func (s *CategoryService) UpdateCategory(category *domain.Category) (*domain.Category, error) {
+	if category.Name == "" {
+		return nil, ErrInvalidCategoryName
+	}
 	newCategory, err := s.repository.UpdateCategory(category)
 	if err != nil {
 		return nil, ErrFailedToUpdateCategory
