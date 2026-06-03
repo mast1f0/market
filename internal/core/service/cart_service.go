@@ -82,7 +82,10 @@ func (s *CartService) DeleteCartItem(userId int64, productId int64) error {
 		return ErrInvalidProduct
 	}
 	err := s.repo.DeleteCartItem(userId, productId)
-	return mapCartRepoError(err)
+	if err != nil {
+		mapCartRepoError(err)
+	}
+	return nil
 }
 
 func (s *CartService) UpdateCartItem(itemId int64, quantity int) (*domain.CartItem, error) {
@@ -98,11 +101,11 @@ func (s *CartService) UpdateCartItem(itemId int64, quantity int) (*domain.CartIt
 	}
 	return updated, nil
 }
-func (s *CartService) CreateCart(cartID int64) (*domain.Cart, error) {
-	if cartID < 0 {
+func (s *CartService) CreateCart(userID int64) (*domain.Cart, error) {
+	if userID < 0 {
 		return nil, ErrInvalidCartID
 	}
-	cart, err := s.repo.CreateCart(cartID)
+	cart, err := s.repo.CreateCart(userID)
 	if err != nil {
 		return nil, mapCartRepoError(err)
 	}
