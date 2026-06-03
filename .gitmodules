@@ -1,3 +1,6 @@
 [submodule "services/auth"]
 	path = services/auth
 	url = https://github.com/mast1f0/auth-microservice
+[submodule "services/images"]
+	path = services/images
+	url = https://github.com/mast1f0/minio-link-service
