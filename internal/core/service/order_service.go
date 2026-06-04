@@ -70,7 +70,7 @@ func (s *OrderService) UpdateStatus(orderId int64, status string, userID int64, 
 		}
 		return ErrFailedToLoadOrder
 	}
-	if order.UserID != userID && role != "admin" {
+	if order.UserID != userID && role != "admin" || role == "buyer" {
 		return ErrForbidden
 	}
 	err = s.orderRepo.UpdateOrderStatus(orderId, status)
