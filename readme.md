@@ -14,22 +14,6 @@
 | **auth-postgres** | — | БД аутентификации |
 | **minio** | 9000 / 9001 | S3-хранилище и консоль |
 
-## Архитектура
-
-```mermaid
-flowchart LR
-    Client[Браузер] --> Nginx
-
-    Nginx -->|"/"| Frontend[React SPA]
-    Nginx -->|"/api/*"| Market[market :8080]
-    Nginx -->|"/auth/*"| Auth[auth-service :8081]
-    Nginx -->|"/minio/*"| Images[images-service :8082]
-
-    Market --> PG[(store_db)]
-    Auth --> AuthPG[(auth_db)]
-    Images --> MinIO[(MinIO)]
-```
-
 ## Возможности
 
 - Каталог товаров и категорий
