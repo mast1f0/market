@@ -1,6 +1,7 @@
 package ports
 
 import (
+	"context"
 	"errors"
 	"market/internal/core/domain"
 )
@@ -14,9 +15,9 @@ var (
 )
 
 type ProductRepository interface {
-	GetProducts() ([]domain.Product, error)
-	GetProductById(id int64) (*domain.Product, error)
-	DeleteProduct(id int64) error
-	CreateProduct(product *domain.Product) (*domain.Product, error)
-	UpdateProduct(product *domain.Product) (*domain.Product, error)
+	GetProducts(ctx context.Context) ([]domain.Product, error)
+	GetProductById(ctx context.Context, id int64) (*domain.Product, error)
+	DeleteProduct(ctx context.Context, id int64) error
+	CreateProduct(ctx context.Context, product *domain.Product) (*domain.Product, error)
+	UpdateProduct(ctx context.Context, product *domain.Product) (*domain.Product, error)
 }

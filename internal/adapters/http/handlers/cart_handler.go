@@ -18,13 +18,14 @@ func NewCartHandler(service *service.CartService) *CartHandler {
 }
 
 func (h *CartHandler) GetCart(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(int64)
+	ctx := r.Context()
+	userID, ok := ctx.Value("user_id").(int64)
 	if !ok {
 		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
 		return
 	}
 
-	cart, err := h.service.GetCartWithItems(userID)
+	cart, err := h.service.GetCartWithItems(ctx, userID)
 	if err != nil {
 		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -34,7 +35,9 @@ func (h *CartHandler) GetCart(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CartHandler) AddItem(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(int64)
+	ctx := r.Context()
+
+	userID, ok := ctx.Value("user_id").(int64)
 	if !ok {
 		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
 		return
@@ -46,7 +49,7 @@ func (h *CartHandler) AddItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newItem, err := h.service.AddCartItem(userID, req.ToDomain())
+	newItem, err := h.service.AddCartItem(ctx, userID, req.ToDomain())
 	if err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, err.Error())
 		return
@@ -54,7 +57,9 @@ func (h *CartHandler) AddItem(w http.ResponseWriter, r *http.Request) {
 	helpers.RespondJSON(w, http.StatusCreated, newItem)
 }
 func (h *CartHandler) RemoveItem(w http.ResponseWriter, r *http.Request) {
-	userId, ok := r.Context().Value("user_id").(int64)
+	ctx := r.Context()
+
+	userId, ok := ctx.Value("user_id").(int64)
 	if !ok {
 		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
 		return
@@ -65,7 +70,7 @@ func (h *CartHandler) RemoveItem(w http.ResponseWriter, r *http.Request) {
 		helpers.RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	err = h.service.DeleteCartItem(userId, item.ItemID)
+	err = h.service.DeleteCartItem(ctx, userId, item.ItemID)
 	if err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, err.Error())
 		return
@@ -74,13 +79,14 @@ func (h *CartHandler) RemoveItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CartHandler) UpdateItem(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	var req dto.UpdateCartItemRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	newCart, err := h.service.UpdateCartItem(req.ItemID, req.Quantity)
+	newCart, err := h.service.UpdateCartItem(ctx, req.ItemID, req.Quantity)
 	if err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, err.Error())
 		return

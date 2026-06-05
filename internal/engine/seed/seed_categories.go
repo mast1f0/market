@@ -1,12 +1,14 @@
 package seed
 
 import (
+	"context"
 	"log"
 	"market/internal/core/domain"
 	"market/internal/core/ports"
 )
 
 func SeedCategories(db ports.CategoryRepository) {
+	ctx := context.Background()
 	categories := []domain.Category{
 		{Name: "Электроника"},
 		{Name: "Одежда"},
@@ -17,7 +19,7 @@ func SeedCategories(db ports.CategoryRepository) {
 	}
 
 	for _, c := range categories {
-		_, err := db.CreateCategory(c.Name)
+		_, err := db.CreateCategory(ctx, c.Name)
 		if err != nil {
 			log.Println(err)
 		}

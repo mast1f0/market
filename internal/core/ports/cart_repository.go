@@ -1,6 +1,7 @@
 package ports
 
 import (
+	"context"
 	"errors"
 	"market/internal/core/domain"
 )
@@ -17,12 +18,12 @@ var (
 )
 
 type CartRepository interface {
-	CreateCart(id int64) (*domain.Cart, error)
-	GetCartWithItems(userID int64) (*domain.Cart, error)
-	ClearCart(userId int64) error
+	CreateCart(ctx context.Context, id int64) (*domain.Cart, error)
+	GetCartWithItems(ctx context.Context, userID int64) (*domain.Cart, error)
+	ClearCart(ctx context.Context, userId int64) error
 
-	FindCartItem(cartID, productID int64) (*domain.CartItem, error)
-	DeleteCartItem(userId int64, productId int64) error
-	UpdateCartItem(itemId int64, quantity int) (*domain.CartItem, error)
-	AddCartItem(userId int64, cartItem *domain.CartItem) (*domain.CartItem, error)
+	FindCartItem(ctx context.Context, cartID, productID int64) (*domain.CartItem, error)
+	DeleteCartItem(ctx context.Context, userId int64, productId int64) error
+	UpdateCartItem(ctx context.Context, itemId int64, quantity int) (*domain.CartItem, error)
+	AddCartItem(ctx context.Context, userId int64, cartItem *domain.CartItem) (*domain.CartItem, error)
 }

@@ -22,7 +22,9 @@ func NewOrderHandler(service *service.OrderService) *OrderHandler {
 }
 
 func (h *OrderHandler) GetOrderByUser(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(int64)
+	ctx := r.Context()
+
+	userID, ok := ctx.Value("user_id").(int64)
 	if !ok {
 		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
 		return
@@ -46,7 +48,7 @@ func (h *OrderHandler) GetOrderByUser(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	orders, err := h.service.GetByUserId(targetUserID)
+	orders, err := h.service.GetByUserId(ctx, targetUserID)
 	if err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, err.Error())
 		return
@@ -55,7 +57,8 @@ func (h *OrderHandler) GetOrderByUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *OrderHandler) GetOrderById(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(int64)
+	ctx := r.Context()
+	userID, ok := ctx.Value("user_id").(int64)
 	if !ok {
 		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
 		return
@@ -66,7 +69,7 @@ func (h *OrderHandler) GetOrderById(w http.ResponseWriter, r *http.Request) {
 		helpers.RespondError(w, http.StatusBadRequest, "cannot get order id")
 		return
 	}
-	order, err := h.service.GetOrderById(id)
+	order, err := h.service.GetOrderById(ctx, id)
 	if err != nil {
 		helpers.RespondError(w, http.StatusNotFound, err.Error())
 		return
@@ -83,12 +86,13 @@ func (h *OrderHandler) GetOrderById(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(int64)
+	ctx := r.Context()
+	userID, ok := ctx.Value("user_id").(int64)
 	if !ok {
 		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
 		return
 	}
-	order, err := h.service.CreateFromCart(userID)
+	order, err := h.service.CreateFromCart(ctx, userID)
 	if err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, err.Error())
 		return
@@ -97,7 +101,8 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *OrderHandler) UpdateOrder(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(int64)
+	ctx := r.Context()
+	userID, ok := ctx.Value("user_id").(int64)
 	if !ok {
 		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
 		return
@@ -119,7 +124,7 @@ func (h *OrderHandler) UpdateOrder(w http.ResponseWriter, r *http.Request) {
 		helpers.RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	err = h.service.UpdateStatus(id, req.Status, userID, role)
+	err = h.service.UpdateStatus(ctx, id, req.Status, userID, role)
 	if err != nil {
 		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
 		return

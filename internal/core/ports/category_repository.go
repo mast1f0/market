@@ -1,6 +1,7 @@
 package ports
 
 import (
+	"context"
 	"errors"
 	"market/internal/core/domain"
 )
@@ -15,11 +16,11 @@ var (
 )
 
 type CategoryRepository interface {
-	CreateCategory(category string) (*domain.Category, error)
-	UpdateCategory(category *domain.Category) (*domain.Category, error)
-	DeleteCategory(id int64) error
-	GetCategory(id int64) (*domain.Category, error)
-	GetCategoryByName(name string) (*domain.Category, error)
-	GetCategories() ([]domain.Category, error)
-	ProductsByCategory(id int64) ([]domain.Product, error)
+	CreateCategory(ctx context.Context, category string) (*domain.Category, error)
+	UpdateCategory(ctx context.Context, category *domain.Category) (*domain.Category, error)
+	DeleteCategory(ctx context.Context, id int64) error
+	GetCategory(ctx context.Context, id int64) (*domain.Category, error)
+	GetCategoryByName(ctx context.Context, name string) (*domain.Category, error)
+	GetCategories(ctx context.Context) ([]domain.Category, error)
+	ProductsByCategory(ctx context.Context, id int64) ([]domain.Product, error)
 }

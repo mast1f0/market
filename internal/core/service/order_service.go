@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"market/internal/core/domain"
 	"market/internal/core/ports"
@@ -29,11 +30,11 @@ func NewOrderService(
 	}
 }
 
-func (s *OrderService) GetOrderById(orderId int64) (*domain.Order, error) {
+func (s *OrderService) GetOrderById(ctx context.Context, orderId int64) (*domain.Order, error) {
 	if orderId < 0 {
 		return nil, ErrInvalidOrderId
 	}
-	order, err := s.orderRepo.GetOrderById(orderId)
+	order, err := s.orderRepo.GetOrderById(ctx, orderId)
 	if err != nil {
 		if errors.Is(err, ports.ErrOrderNotFound) {
 			return nil, ErrOrderNotFound
@@ -42,11 +43,11 @@ func (s *OrderService) GetOrderById(orderId int64) (*domain.Order, error) {
 	}
 	return order, nil
 }
-func (s *OrderService) GetByUserId(userId int64) ([]domain.Order, error) {
+func (s *OrderService) GetByUserId(ctx context.Context, userId int64) ([]domain.Order, error) {
 	if userId < 0 {
 		return nil, ErrInvalidUserID
 	}
-	orders, err := s.orderRepo.GetOrderByUserId(userId)
+	orders, err := s.orderRepo.GetOrderByUserId(ctx, userId)
 	if err != nil {
 		if errors.Is(err, ports.ErrOrderNotFound) {
 			return nil, ErrOrderNotFound
@@ -56,14 +57,14 @@ func (s *OrderService) GetByUserId(userId int64) ([]domain.Order, error) {
 	return orders, nil
 }
 
-func (s *OrderService) UpdateStatus(orderId int64, status string, userID int64, role string) error {
+func (s *OrderService) UpdateStatus(ctx context.Context, orderId int64, status string, userID int64, role string) error {
 	if userID < 0 {
 		return ErrInvalidUserID
 	}
 	if orderId < 0 {
 		return ErrInvalidOrderId
 	}
-	order, err := s.GetOrderById(orderId)
+	order, err := s.GetOrderById(ctx, orderId)
 	if err != nil {
 		if errors.Is(err, ports.ErrOrderNotFound) {
 			return ErrOrderNotFound
@@ -73,7 +74,7 @@ func (s *OrderService) UpdateStatus(orderId int64, status string, userID int64, 
 	if order.UserID != userID && role != "admin" || role == "buyer" {
 		return ErrForbidden
 	}
-	err = s.orderRepo.UpdateOrderStatus(orderId, status)
+	err = s.orderRepo.UpdateOrderStatus(ctx, orderId, status)
 	if err != nil {
 		if errors.Is(err, ports.ErrOrderNotFound) {
 			return ErrOrderNotFound
@@ -83,11 +84,11 @@ func (s *OrderService) UpdateStatus(orderId int64, status string, userID int64, 
 	return nil
 }
 
-func (s *OrderService) CreateFromCart(userId int64) (*domain.Order, error) {
+func (s *OrderService) CreateFromCart(ctx context.Context, userId int64) (*domain.Order, error) {
 	if userId < 0 {
 		return nil, ErrInvalidUserID
 	}
-	cart, err := s.cartRepo.GetCartWithItems(userId)
+	cart, err := s.cartRepo.GetCartWithItems(ctx, userId)
 	if err != nil {
 		if errors.Is(err, ports.ErrCartNotFound) {
 			return nil, ErrCartNotFound
@@ -134,20 +135,20 @@ func (s *OrderService) CreateFromCart(userId int64) (*domain.Order, error) {
 		TotalPrice: totalPrice,
 	}
 
-	order, err = s.orderRepo.CreateOrder(order)
+	order, err = s.orderRepo.CreateOrder(ctx, order)
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.orderRepo.AddOrderItems(order.ID, orderedItems)
+	err = s.orderRepo.AddOrderItems(ctx, order.ID, orderedItems)
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.cartRepo.ClearCart(userId)
+	err = s.cartRepo.ClearCart(ctx, userId)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.orderRepo.GetOrderById(order.ID)
+	return s.orderRepo.GetOrderById(ctx, order.ID)
 }

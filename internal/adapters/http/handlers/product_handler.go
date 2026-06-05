@@ -21,7 +21,8 @@ func NewProductHandler(products *service.ProductService) *ProductHandler {
 }
 
 func (h *ProductHandler) GetAllProducts(w http.ResponseWriter, r *http.Request) {
-	products, err := h.products.GetAllProducts()
+	ctx := r.Context()
+	products, err := h.products.GetAllProducts(ctx)
 	if err != nil {
 		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -30,7 +31,8 @@ func (h *ProductHandler) GetAllProducts(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *ProductHandler) AddProduct(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(int64)
+	ctx := r.Context()
+	userID, ok := ctx.Value("user_id").(int64)
 	if !ok {
 		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
 		return
@@ -46,7 +48,7 @@ func (h *ProductHandler) AddProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	product, err := h.products.CreateProduct(req.ToDomain(userID))
+	product, err := h.products.CreateProduct(ctx, req.ToDomain(userID))
 	if err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, "unable to add product")
 		return
@@ -56,7 +58,8 @@ func (h *ProductHandler) AddProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(int64)
+	ctx := r.Context()
+	userID, ok := ctx.Value("user_id").(int64)
 	if !ok {
 		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
 		return
@@ -74,7 +77,7 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.products.DeleteProduct(id, userID, role); err != nil {
+	if err := h.products.DeleteProduct(ctx, id, userID, role); err != nil {
 		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -83,13 +86,14 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ProductHandler) PutProduct(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(int64)
+	ctx := r.Context()
+	userID, ok := ctx.Value("user_id").(int64)
 	if !ok {
 		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user id")
 		return
 	}
 
-	role, ok := r.Context().Value("role").(string)
+	role, ok := ctx.Value("role").(string)
 	if !ok {
 		helpers.RespondError(w, http.StatusUnauthorized, "cannot get user role")
 		return
@@ -105,7 +109,7 @@ func (h *ProductHandler) PutProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updated, err := h.products.UpdateProduct(req.ToDomain(userID, id), role)
+	updated, err := h.products.UpdateProduct(ctx, req.ToDomain(userID, id), role)
 	if err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, "unable to update product")
 		return
@@ -115,9 +119,10 @@ func (h *ProductHandler) PutProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ProductHandler) GetProductById(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 
-	product, err := h.products.GetProductById(id)
+	product, err := h.products.GetProductById(ctx, id)
 	if err != nil {
 		helpers.RespondError(w, http.StatusNotFound, err.Error())
 		return

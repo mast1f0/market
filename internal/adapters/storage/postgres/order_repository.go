@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"market/internal/core/domain"
@@ -18,7 +19,7 @@ func NewOrderRepository(db *sql.DB) *OrderRepository {
 	return &OrderRepository{db: db}
 }
 
-func (r *OrderRepository) CreateOrder(order *domain.Order) (*domain.Order, error) {
+func (r *OrderRepository) CreateOrder(ctx context.Context, order *domain.Order) (*domain.Order, error) {
 	if order == nil {
 		return nil, ports.ErrFailedToSaveOrder
 	}
@@ -29,7 +30,7 @@ func (r *OrderRepository) CreateOrder(order *domain.Order) (*domain.Order, error
 		RETURNING id, created_at, updated_at
 	`
 
-	err := r.db.QueryRow(query, order.UserID, order.Status, order.TotalPrice).
+	err := r.db.QueryRowContext(ctx, query, order.UserID, order.Status, order.TotalPrice).
 		Scan(&order.ID, &order.CreatedAt, &order.UpdatedAt)
 	if err != nil {
 		return nil, ports.ErrFailedToSaveOrder
@@ -55,9 +56,9 @@ func ensureOrderItems(order *domain.Order) {
 	}
 }
 
-func (r *OrderRepository) GetOrderById(id int64) (*domain.Order, error) {
+func (r *OrderRepository) GetOrderById(ctx context.Context, id int64) (*domain.Order, error) {
 	var order domain.Order
-	err := r.db.QueryRow(`
+	err := r.db.QueryRowContext(ctx, `
 		SELECT id, user_id, status, total_price, created_at, updated_at
 		FROM orders
 		WHERE id = $1
@@ -69,7 +70,7 @@ func (r *OrderRepository) GetOrderById(id int64) (*domain.Order, error) {
 		return nil, ports.ErrFailedToLoadOrder
 	}
 
-	items, err := r.loadOrderItemsByOrderIDs([]int64{order.ID})
+	items, err := r.loadOrderItemsByOrderIDs(ctx, []int64{order.ID})
 	if err != nil {
 		return nil, ports.ErrFailedToLoadOrder
 	}
@@ -78,8 +79,8 @@ func (r *OrderRepository) GetOrderById(id int64) (*domain.Order, error) {
 	return &order, nil
 }
 
-func (r *OrderRepository) GetOrderByUserId(userId int64) ([]domain.Order, error) {
-	rows, err := r.db.Query(`
+func (r *OrderRepository) GetOrderByUserId(ctx context.Context, userId int64) ([]domain.Order, error) {
+	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, user_id, status, total_price, created_at, updated_at
 		FROM orders
 		WHERE user_id = $1
@@ -109,7 +110,7 @@ func (r *OrderRepository) GetOrderByUserId(userId int64) ([]domain.Order, error)
 		return orders, nil
 	}
 
-	itemsByOrderID, err := r.loadOrderItemsByOrderIDs(orderIDs)
+	itemsByOrderID, err := r.loadOrderItemsByOrderIDs(ctx, orderIDs)
 	if err != nil {
 		return nil, ports.ErrFailedToLoadOrder
 	}
@@ -122,7 +123,7 @@ func (r *OrderRepository) GetOrderByUserId(userId int64) ([]domain.Order, error)
 	return orders, nil
 }
 
-func (r *OrderRepository) AddOrderItems(orderId int64, items []domain.OrderItem) error {
+func (r *OrderRepository) AddOrderItems(ctx context.Context, orderId int64, items []domain.OrderItem) error {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return ports.ErrFailedToSaveOrder
@@ -130,14 +131,14 @@ func (r *OrderRepository) AddOrderItems(orderId int64, items []domain.OrderItem)
 	defer tx.Rollback()
 
 	var exists bool
-	if err := tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM orders WHERE id = $1)`, orderId).Scan(&exists); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM orders WHERE id = $1)`, orderId).Scan(&exists); err != nil {
 		return ports.ErrFailedToSaveOrder
 	}
 	if !exists {
 		return ports.ErrOrderNotFound
 	}
 
-	stmt, err := tx.Prepare(`
+	stmt, err := tx.PrepareContext(ctx, `
 		INSERT INTO order_items (order_id, product_id, quantity, price_snapshot, name_snapshot, image_snapshot, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, NOW())
 	`)
@@ -167,8 +168,8 @@ func (r *OrderRepository) AddOrderItems(orderId int64, items []domain.OrderItem)
 	return nil
 }
 
-func (r *OrderRepository) UpdateOrderStatus(orderId int64, status string) error {
-	res, err := r.db.Exec(`
+func (r *OrderRepository) UpdateOrderStatus(ctx context.Context, orderId int64, status string) error {
+	res, err := r.db.ExecContext(ctx, `
 		UPDATE orders
 		SET status = $1, updated_at = NOW()
 		WHERE id = $2
@@ -187,13 +188,13 @@ func (r *OrderRepository) UpdateOrderStatus(orderId int64, status string) error 
 	return nil
 }
 
-func (r *OrderRepository) loadOrderItemsByOrderIDs(orderIDs []int64) (map[int64][]domain.OrderItem, error) {
+func (r *OrderRepository) loadOrderItemsByOrderIDs(ctx context.Context, orderIDs []int64) (map[int64][]domain.OrderItem, error) {
 	itemsByOrderID := make(map[int64][]domain.OrderItem, len(orderIDs))
 	if len(orderIDs) == 0 {
 		return itemsByOrderID, nil
 	}
 
-	rows, err := r.db.Query(`
+	rows, err := r.db.QueryContext(ctx, `
 		SELECT
 			oi.id,
 			oi.order_id,

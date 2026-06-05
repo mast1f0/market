@@ -19,7 +19,7 @@ func NewCartRepository(db *sql.DB) *CartRepository {
 	}
 }
 
-func (r *CartRepository) CreateCart(id int64) (*domain.Cart, error) {
+func (r *CartRepository) CreateCart(ctx context.Context, id int64) (*domain.Cart, error) {
 	var cart = &domain.Cart{
 		UserID: &id,
 		Status: "active",
@@ -27,16 +27,14 @@ func (r *CartRepository) CreateCart(id int64) (*domain.Cart, error) {
 	query := `INSERT INTO carts(user_id, status, created_at, updated_at) 
           VALUES ($1, 'active', NOW(), NOW()) 
           RETURNING id, created_at, updated_at`
-	err := r.db.QueryRow(query, id).Scan(&cart.ID, &cart.CreatedAt, &cart.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, query, id).Scan(&cart.ID, &cart.CreatedAt, &cart.UpdatedAt)
 	if err != nil {
 		return nil, ports.ErrFailedToSaveCart
 	}
 	return cart, nil
 }
 
-func (r *CartRepository) GetCartWithItems(userID int64) (*domain.Cart, error) {
-	ctx := context.Background()
-
+func (r *CartRepository) GetCartWithItems(ctx context.Context, userID int64) (*domain.Cart, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, ports.ErrFailedToLoadCart
@@ -128,14 +126,14 @@ func (r *CartRepository) GetCartWithItems(userID int64) (*domain.Cart, error) {
 	return cart, nil
 }
 
-func (r *CartRepository) FindCartItem(cartID, productID int64) (*domain.CartItem, error) {
+func (r *CartRepository) FindCartItem(ctx context.Context, cartID, productID int64) (*domain.CartItem, error) {
 	var item domain.CartItem
 
 	query := `SELECT id, cart_id, product_id, quantity, price_snapshot, created_at, updated_at 
               FROM cart_items 
               WHERE cart_id = $1 AND product_id = $2`
 
-	err := r.db.QueryRow(query, cartID, productID).Scan(
+	err := r.db.QueryRowContext(ctx, query, cartID, productID).Scan(
 		&item.ID, &item.CartID, &item.ProductID,
 		&item.Quantity, &item.PriceSnapshot,
 		&item.CreatedAt, &item.UpdatedAt,
@@ -149,9 +147,9 @@ func (r *CartRepository) FindCartItem(cartID, productID int64) (*domain.CartItem
 	return &item, nil
 }
 
-func (r *CartRepository) DeleteCartItem(userId int64, itemId int64) error {
+func (r *CartRepository) DeleteCartItem(ctx context.Context, userId int64, itemId int64) error {
 	var cartId int64
-	err := r.db.QueryRow(`
+	err := r.db.QueryRowContext(ctx, `
         SELECT id FROM carts 
         WHERE user_id = $1 AND status = 'active'
     `, userId).Scan(&cartId)
@@ -184,13 +182,13 @@ func (r *CartRepository) DeleteCartItem(userId int64, itemId int64) error {
 	return nil
 }
 
-func (r *CartRepository) UpdateCartItem(itemId int64, quantity int) (*domain.CartItem, error) {
+func (r *CartRepository) UpdateCartItem(ctx context.Context, itemId int64, quantity int) (*domain.CartItem, error) {
 	var item domain.CartItem
 	query := `UPDATE cart_items 
           SET quantity = $1, updated_at = NOW() 
           WHERE id = $2 
           RETURNING id, cart_id, product_id, quantity, price_snapshot, created_at, updated_at`
-	row := r.db.QueryRow(query, quantity, itemId)
+	row := r.db.QueryRowContext(ctx, query, quantity, itemId)
 	err := row.Scan(&item.ID, &item.CartID, &item.ProductID, &item.Quantity,
 		&item.PriceSnapshot, &item.CreatedAt, &item.UpdatedAt)
 	if err != nil {
@@ -202,9 +200,7 @@ func (r *CartRepository) UpdateCartItem(itemId int64, quantity int) (*domain.Car
 	return &item, nil
 }
 
-func (r *CartRepository) AddCartItem(userID int64, cartItem *domain.CartItem) (*domain.CartItem, error) {
-	ctx := context.Background()
-
+func (r *CartRepository) AddCartItem(ctx context.Context, userID int64, cartItem *domain.CartItem) (*domain.CartItem, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, ports.ErrFailedToSaveCart
@@ -284,12 +280,12 @@ func (r *CartRepository) AddCartItem(userID int64, cartItem *domain.CartItem) (*
 	return cartItem, nil
 }
 
-func (r *CartRepository) ClearCart(userID int64) error {
+func (r *CartRepository) ClearCart(ctx context.Context, userID int64) error {
 	query := `DELETE FROM carts 
               WHERE user_id = $1 AND status = 'active'
               RETURNING id`
 	var deletedID int64
-	err := r.db.QueryRow(query, userID).Scan(&deletedID)
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(&deletedID)
 	if err == sql.ErrNoRows {
 		return ports.ErrCartNotFound
 	}

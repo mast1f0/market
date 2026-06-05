@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"market/internal/core/domain"
@@ -19,8 +20,8 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 	}
 }
 
-func (r *ProductRepository) GetProducts() ([]domain.Product, error) {
-	rows, err := r.db.Query("SELECT id, owner_id, name, description, price, category_id, stock, image_url, created_at FROM products")
+func (r *ProductRepository) GetProducts(ctx context.Context) ([]domain.Product, error) {
+	rows, err := r.db.QueryContext(ctx, "SELECT id, owner_id, name, description, price, category_id, stock, image_url, created_at FROM products")
 	if err != nil {
 		return nil, ports.ErrNotFound
 	}
@@ -44,9 +45,9 @@ func (r *ProductRepository) GetProducts() ([]domain.Product, error) {
 	return products, nil
 }
 
-func (r *ProductRepository) GetProductById(id int64) (*domain.Product, error) {
+func (r *ProductRepository) GetProductById(ctx context.Context, id int64) (*domain.Product, error) {
 	query := `SELECT * FROM products WHERE id = $1;`
-	row := r.db.QueryRow(query, id)
+	row := r.db.QueryRowContext(ctx, query, id)
 	var product domain.Product
 	err := row.Scan(&product.ID, &product.OwnerID, &product.Name, &product.Description, &product.Price, &product.CategoryID, &product.Stock,
 		&product.ImageURL, &product.CreatedAt)
@@ -59,9 +60,9 @@ func (r *ProductRepository) GetProductById(id int64) (*domain.Product, error) {
 	return &product, nil
 }
 
-func (r *ProductRepository) DeleteProduct(id int64) error {
+func (r *ProductRepository) DeleteProduct(ctx context.Context, id int64) error {
 	query := `DELETE FROM products WHERE id = $1;`
-	res, err := r.db.Exec(query, id)
+	res, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return ports.ErrNotFound
 	}
@@ -75,9 +76,9 @@ func (r *ProductRepository) DeleteProduct(id int64) error {
 	return nil
 }
 
-func (r *ProductRepository) CreateProduct(product *domain.Product) (*domain.Product, error) {
+func (r *ProductRepository) CreateProduct(ctx context.Context, product *domain.Product) (*domain.Product, error) {
 	query := `INSERT INTO products(owner_id, name, description, price, category_id, stock, image_url, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, created_at`
-	err := r.db.QueryRow(query, product.OwnerID, product.Name, product.Description, product.Price, product.CategoryID, product.Stock, product.ImageURL, product.CreatedAt).Scan(&product.ID, &product.CreatedAt)
+	err := r.db.QueryRowContext(ctx, query, product.OwnerID, product.Name, product.Description, product.Price, product.CategoryID, product.Stock, product.ImageURL, product.CreatedAt).Scan(&product.ID, &product.CreatedAt)
 	if err != nil {
 		var pqErr *pq.Error
 
@@ -91,8 +92,8 @@ func (r *ProductRepository) CreateProduct(product *domain.Product) (*domain.Prod
 	return product, nil
 }
 
-func (r *ProductRepository) UpdateProduct(product *domain.Product) (*domain.Product, error) {
-	res, err := r.db.Exec(`
+func (r *ProductRepository) UpdateProduct(ctx context.Context, product *domain.Product) (*domain.Product, error) {
+	res, err := r.db.ExecContext(ctx, `
 		UPDATE products
 		SET name = $1,
 			description = $2,

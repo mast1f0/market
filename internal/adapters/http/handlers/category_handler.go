@@ -23,6 +23,8 @@ func NewCategoryHandler(service *service.CategoryService) *CategoryHandler {
 }
 
 func (h *CategoryHandler) AddCategory(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	var req dto.CreateCategoryRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, "invalid json body")
@@ -33,7 +35,7 @@ func (h *CategoryHandler) AddCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	created, err := h.service.CreateCategory(strings.TrimSpace(req.Name))
+	created, err := h.service.CreateCategory(ctx, strings.TrimSpace(req.Name))
 	if err != nil {
 		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -43,8 +45,10 @@ func (h *CategoryHandler) AddCategory(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CategoryHandler) GetCategory(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
-	category, err := h.service.GetCategory(id)
+	category, err := h.service.GetCategory(ctx, id)
 	if err != nil {
 		helpers.RespondError(w, http.StatusNotFound, err.Error())
 		return
@@ -54,9 +58,10 @@ func (h *CategoryHandler) GetCategory(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CategoryHandler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
-	if err = h.service.DeleteCategory(id); err != nil {
-		//со статусами надо порешать
+	if err = h.service.DeleteCategory(ctx, id); err != nil {
 		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -65,6 +70,8 @@ func (h *CategoryHandler) DeleteCategory(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *CategoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	var req dto.UpdateCategoryRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -76,7 +83,7 @@ func (h *CategoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if _, err := h.service.GetCategory(id); err != nil {
+	if _, err := h.service.GetCategory(ctx, id); err != nil {
 		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -86,7 +93,7 @@ func (h *CategoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request)
 		Name: strings.TrimSpace(req.Name),
 	}
 
-	updated, err := h.service.UpdateCategory(category)
+	updated, err := h.service.UpdateCategory(ctx, category)
 	if err != nil {
 		helpers.RespondError(w, http.StatusBadRequest, err.Error())
 		return
@@ -96,7 +103,9 @@ func (h *CategoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *CategoryHandler) ListCategories(w http.ResponseWriter, r *http.Request) {
-	categories, err := h.service.GetCategories()
+	ctx := r.Context()
+
+	categories, err := h.service.GetCategories(ctx)
 	if err != nil {
 		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -105,8 +114,10 @@ func (h *CategoryHandler) ListCategories(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *CategoryHandler) ListProductsByCategoryID(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 32)
-	products, err := h.service.GetCategoriesByCategoryID(id)
+	products, err := h.service.GetCategoriesByCategoryID(ctx, id)
 	if err != nil {
 		helpers.RespondError(w, http.StatusNotFound, err.Error())
 		return
