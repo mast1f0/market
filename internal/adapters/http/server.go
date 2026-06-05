@@ -2,7 +2,7 @@ package http
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"market/internal/engine/logger"
 	"net/http"
 	"os"
@@ -31,7 +31,7 @@ func NewServer(addr string, handler http.Handler, logger *logger.Logger) *Server
 
 func (srv *Server) Start() error {
 	go func() {
-		fmt.Println("Server is listening on http://localhost:8080")
+		srv.logger.Info("Server is listening on http://localhost", srv.httpServer.Addr)
 		err := http.ListenAndServe(":8080", srv.httpServer.Handler)
 		if err != nil {
 			return
@@ -43,7 +43,7 @@ func (srv *Server) Start() error {
 
 	select {
 	case sig := <-shutdown:
-		srv.logger.Info("Received signal: %v", sig)
+		srv.logger.Info("Received signal: %v", slog.String("signal", sig.String()))
 
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
