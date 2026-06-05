@@ -45,6 +45,6 @@ func main() {
 
 	jwt := jwtutil.Manager{Secret: []byte(cfg.JWT_SECRET)}
 	router := http2.SetupRoutes(productHandler, categoryHandler, cartHandler, orderHanler, &jwt, logger)
-	srv := http2.NewServer(router)
+	srv := http2.NewServer(":8080", router, logger)
 	srv.Start()
 }

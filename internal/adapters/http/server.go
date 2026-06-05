@@ -1,26 +1,62 @@
 package http
 
 import (
+	"context"
 	"fmt"
+	"market/internal/engine/logger"
 	"net/http"
-
-	"github.com/go-chi/chi/v5"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 type Server struct {
-	router http.Handler
+	httpServer *http.Server
+	logger     *logger.Logger
 }
 
-func NewServer(router *chi.Mux) *Server {
+func NewServer(addr string, handler http.Handler, logger *logger.Logger) *Server {
 	return &Server{
-		router: router,
+		httpServer: &http.Server{
+			Addr:         addr,
+			Handler:      handler,
+			ReadTimeout:  5 * time.Second,
+			WriteTimeout: 10 * time.Second,
+			IdleTimeout:  120 * time.Second,
+		},
+		logger: logger,
 	}
 }
 
-func (srv *Server) Start() {
-	fmt.Println("Server is listening on http://localhost:8080")
-	err := http.ListenAndServe(":8080", srv.router)
-	if err != nil {
-		return
+func (srv *Server) Start() error {
+	go func() {
+		fmt.Println("Server is listening on http://localhost:8080")
+		err := http.ListenAndServe(":8080", srv.httpServer.Handler)
+		if err != nil {
+			return
+		}
+	}()
+
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	select {
+	case sig := <-shutdown:
+		srv.logger.Info("Received signal: %v", sig)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		if err := srv.httpServer.Shutdown(ctx); err != nil {
+			if closeErr := srv.httpServer.Close(); closeErr != nil {
+				srv.logger.Info("Force close error: %v", closeErr)
+			}
+			srv.logger.Error("graceful shutdown failed:", err)
+			return err
+		}
+
+		srv.logger.Info("Server stopped gracefully")
+		return nil
 	}
 }
