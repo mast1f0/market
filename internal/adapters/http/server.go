@@ -32,7 +32,7 @@ func NewServer(addr string, handler http.Handler, logger *logger.Logger) *Server
 func (srv *Server) Start() error {
 	go func() {
 		srv.logger.Info("Server is listening on http://localhost", srv.httpServer.Addr)
-		err := http.ListenAndServe(":8080", srv.httpServer.Handler)
+		err := srv.httpServer.ListenAndServe()
 		if err != nil {
 			return
 		}
