@@ -10,7 +10,14 @@ import (
 	"github.com/go-chi/cors"
 )
 
-func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handlers.CategoryHandler, cartHandler *handlers.CartHandler, orderHandler *handlers.OrderHandler, jwt *jwtutil.Manager, logger *logger.Logger) *chi.Mux {
+type AllHandler struct {
+	ProductHandler  *handlers.ProductHandler
+	CategoryHandler *handlers.CategoryHandler
+	CartHandler     *handlers.CartHandler
+	OrderHandler    *handlers.OrderHandler
+}
+
+func SetupRoutes(handlers *AllHandler, jwt *jwtutil.Manager, logger *logger.Logger) *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Use(cors.Handler(cors.Options{
@@ -22,11 +29,11 @@ func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handl
 	r.Use(middleware.LoggingMiddleware(logger))
 	//не требует авторизации
 	r.Group(func(r chi.Router) {
-		r.Get("/products", productHandler.GetAllProducts)
-		r.Get("/products/{id}", productHandler.GetProductById)
+		r.Get("/products", handlers.ProductHandler.GetAllProducts)
+		r.Get("/products/{id}", handlers.ProductHandler.GetProductById)
 
-		r.Get("/categories/{id}", categoryHandler.ListProductsByCategoryID)
-		r.Get("/categories", categoryHandler.ListCategories)
+		r.Get("/categories/{id}", handlers.CategoryHandler.ListProductsByCategoryID)
+		r.Get("/categories", handlers.CategoryHandler.ListCategories)
 	})
 
 	//авторизованные типочки
@@ -36,27 +43,27 @@ func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handl
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.RoleMiddleware("seller", "admin"))
 
-			r.Post("/products", productHandler.AddProduct)
-			r.Delete("/products/{id}", productHandler.DeleteProduct)
-			r.Put("/products/{id}", productHandler.PutProduct)
+			r.Post("/products", handlers.ProductHandler.AddProduct)
+			r.Delete("/products/{id}", handlers.ProductHandler.DeleteProduct)
+			r.Put("/products/{id}", handlers.ProductHandler.PutProduct)
 
-			r.Post("/categories", categoryHandler.AddCategory)
-			r.Delete("/categories/{id}", categoryHandler.DeleteCategory)
-			r.Put("/categories/{id}", categoryHandler.UpdateCategory)
+			r.Post("/categories", handlers.CategoryHandler.AddCategory)
+			r.Delete("/categories/{id}", handlers.CategoryHandler.DeleteCategory)
+			r.Put("/categories/{id}", handlers.CategoryHandler.UpdateCategory)
 
-			r.Put("/orders/{id}", orderHandler.UpdateOrder)
+			r.Put("/orders/{id}", handlers.OrderHandler.UpdateOrder)
 		})
 
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.RoleMiddleware("buyer", "seller", "admin"))
-			r.Get("/cart", cartHandler.GetCart)
-			r.Post("/cart/items", cartHandler.AddItem)
-			r.Delete("/cart/items", cartHandler.RemoveItem)
-			r.Put("/cart/items", cartHandler.UpdateItem)
+			r.Get("/cart", handlers.CartHandler.GetCart)
+			r.Post("/cart/items", handlers.CartHandler.AddItem)
+			r.Delete("/cart/items", handlers.CartHandler.RemoveItem)
+			r.Put("/cart/items", handlers.CartHandler.UpdateItem)
 
-			r.Get("/orders", orderHandler.GetOrderByUser)
-			r.Get("/orders/{id}", orderHandler.GetOrderById)
-			r.Post("/orders", orderHandler.CreateOrder)
+			r.Get("/orders", handlers.OrderHandler.GetOrderByUser)
+			r.Get("/orders/{id}", handlers.OrderHandler.GetOrderById)
+			r.Post("/orders", handlers.OrderHandler.CreateOrder)
 		})
 	})
 

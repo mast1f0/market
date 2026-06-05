@@ -38,13 +38,15 @@ func main() {
 	cartService := service.NewCartService(cartRepository, productRepository)
 	orderService := service.NewOrderService(orderRepository, cartRepository)
 
-	productHandler := handlers.NewProductHandler(productService)
-	categoryHandler := handlers.NewCategoryHandler(categoryService)
-	cartHandler := handlers.NewCartHandler(cartService)
-	orderHanler := handlers.NewOrderHandler(orderService)
-
+	handlersAll := &http2.AllHandler{
+		ProductHandler:  handlers.NewProductHandler(productService),
+		CategoryHandler: handlers.NewCategoryHandler(categoryService),
+		CartHandler:     handlers.NewCartHandler(cartService),
+		OrderHandler:    handlers.NewOrderHandler(orderService),
+	}
+	
 	jwt := jwtutil.Manager{Secret: []byte(cfg.JWT_SECRET)}
-	router := http2.SetupRoutes(productHandler, categoryHandler, cartHandler, orderHanler, &jwt, logg)
+	router := http2.SetupRoutes(handlersAll, &jwt, logg)
 	srv := http2.NewServer(":8080", router, logg)
 	srv.Start()
 }
