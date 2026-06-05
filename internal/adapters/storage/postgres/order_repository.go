@@ -188,6 +188,27 @@ func (r *OrderRepository) UpdateOrderStatus(ctx context.Context, orderId int64, 
 	return nil
 }
 
+type orderItemRow struct {
+	ID            int64
+	OrderID       int64
+	ProductID     int64
+	Quantity      int
+	PriceSnapshot float64
+	NameSnapshot  string
+	ImageSnapshot sql.NullString
+	CreatedAt     time.Time
+
+	ProductIDDB   sql.NullInt64
+	OwnerID       sql.NullInt64
+	Name          sql.NullString
+	Description   sql.NullString
+	Price         sql.NullFloat64
+	CategoryID    sql.NullInt64
+	ImageURL      sql.NullString
+	Stock         sql.NullInt64
+	ProductCreate sql.NullTime
+}
+
 func (r *OrderRepository) loadOrderItemsByOrderIDs(ctx context.Context, orderIDs []int64) (map[int64][]domain.OrderItem, error) {
 	itemsByOrderID := make(map[int64][]domain.OrderItem, len(orderIDs))
 	if len(orderIDs) == 0 {
@@ -224,68 +245,67 @@ func (r *OrderRepository) loadOrderItemsByOrderIDs(ctx context.Context, orderIDs
 	defer rows.Close()
 
 	for rows.Next() {
-		var item domain.OrderItem
-		var imageSnapshot sql.NullString
+		var row orderItemRow
 
-		var (
-			pID         sql.NullInt64
-			pOwnerID    sql.NullInt64
-			pName       sql.NullString
-			pDesc       sql.NullString
-			pPrice      sql.NullFloat64
-			pCategoryID sql.NullInt64
-			pImageURL   sql.NullString
-			pStock      sql.NullInt64
-			pCreatedAt  sql.NullTime
-		)
-
-		var createdAt time.Time
 		if err := rows.Scan(
-			&item.ID,
-			&item.OrderID,
-			&item.ProductID,
-			&item.Quantity,
-			&item.PriceSnapshot,
-			&item.NameSnapshot,
-			&imageSnapshot,
-			&createdAt,
-			&pID,
-			&pOwnerID,
-			&pName,
-			&pDesc,
-			&pPrice,
-			&pCategoryID,
-			&pImageURL,
-			&pStock,
-			&pCreatedAt,
+			&row.ID,
+			&row.OrderID,
+			&row.ProductID,
+			&row.Quantity,
+			&row.PriceSnapshot,
+			&row.NameSnapshot,
+			&row.ImageSnapshot,
+			&row.CreatedAt,
+			&row.ProductIDDB,
+			&row.OwnerID,
+			&row.Name,
+			&row.Description,
+			&row.Price,
+			&row.CategoryID,
+			&row.ImageURL,
+			&row.Stock,
+			&row.ProductCreate,
 		); err != nil {
 			return nil, err
 		}
 
-		item.CreatedAt = createdAt
-		if imageSnapshot.Valid {
-			item.ImageSnapshot = imageSnapshot.String
+		item := domain.OrderItem{
+			ID:            row.ID,
+			OrderID:       row.OrderID,
+			ProductID:     row.ProductID,
+			Quantity:      row.Quantity,
+			PriceSnapshot: row.PriceSnapshot,
+			NameSnapshot:  row.NameSnapshot,
+			CreatedAt:     row.CreatedAt,
 		}
 
-		if pID.Valid {
-			p := &domain.Product{
-				ID:          pID.Int64,
-				OwnerID:     pOwnerID.Int64,
-				Name:        pName.String,
-				Description: pDesc.String,
-				Price:       pPrice.Float64,
-				CategoryID:  pCategoryID.Int64,
-				ImageURL:    pImageURL.String,
-				Stock:       int(pStock.Int64),
-			}
-			if pCreatedAt.Valid {
-				p.CreatedAt = pCreatedAt.Time
-			}
-			item.Product = p
+		if row.ImageSnapshot.Valid {
+			item.ImageSnapshot = row.ImageSnapshot.String
 		}
 
-		itemsByOrderID[item.OrderID] = append(itemsByOrderID[item.OrderID], item)
+		if row.ProductIDDB.Valid {
+			item.Product = &domain.Product{
+				ID:          row.ProductIDDB.Int64,
+				OwnerID:     row.OwnerID.Int64,
+				Name:        row.Name.String,
+				Description: row.Description.String,
+				Price:       row.Price.Float64,
+				CategoryID:  row.CategoryID.Int64,
+				ImageURL:    row.ImageURL.String,
+				Stock:       int(row.Stock.Int64),
+			}
+
+			if row.ProductCreate.Valid {
+				item.Product.CreatedAt = row.ProductCreate.Time
+			}
+		}
+
+		itemsByOrderID[item.OrderID] = append(
+			itemsByOrderID[item.OrderID],
+			item,
+		)
 	}
+
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
