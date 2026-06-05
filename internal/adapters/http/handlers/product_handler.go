@@ -130,3 +130,18 @@ func (h *ProductHandler) GetProductById(w http.ResponseWriter, r *http.Request) 
 
 	helpers.RespondJSON(w, http.StatusOK, product)
 }
+
+func (h *ProductHandler) GetProductsByName(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	name := r.URL.Query().Get("name")
+	if name == "" {
+		helpers.RespondError(w, http.StatusBadRequest, "name is required")
+		return
+	}
+	products, err := h.products.GetProductsByName(ctx, name)
+	if err != nil {
+		helpers.RespondErr(w, err)
+		return
+	}
+	helpers.RespondJSON(w, http.StatusOK, products)
+}

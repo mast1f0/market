@@ -129,3 +129,59 @@ func (r *ProductRepository) UpdateProduct(ctx context.Context, product *domain.P
 
 	return product, nil
 }
+
+func (r *ProductRepository) GetProductsByName(ctx context.Context, name string) ([]domain.Product, error) {
+	query := `
+		SELECT
+			id,
+			owner_id,
+			name,
+			description,
+			price,
+			category_id,
+			stock,
+			image_url,
+			created_at
+		FROM products
+		WHERE name ILIKE $1
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, "%"+name+"%")
+	if err != nil {
+		return nil, ports.ErrFailedToLoadProduct
+	}
+	defer rows.Close()
+
+	products := make([]domain.Product, 0)
+
+	for rows.Next() {
+		var product domain.Product
+
+		err := rows.Scan(
+			&product.ID,
+			&product.OwnerID,
+			&product.Name,
+			&product.Description,
+			&product.Price,
+			&product.CategoryID,
+			&product.Stock,
+			&product.ImageURL,
+			&product.CreatedAt,
+		)
+		if err != nil {
+			return nil, ports.ErrFailedToLoadProduct
+		}
+
+		products = append(products, product)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, ports.ErrFailedToLoadProduct
+	}
+
+	if len(products) == 0 {
+		return nil, ports.ErrNotFound
+	}
+
+	return products, nil
+}

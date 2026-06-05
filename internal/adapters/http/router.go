@@ -31,6 +31,7 @@ func SetupRoutes(handlers *AllHandler, jwt *jwtutil.Manager, logger *logger.Logg
 	r.Group(func(r chi.Router) {
 		r.Get("/products", handlers.ProductHandler.GetAllProducts)
 		r.Get("/products/{id}", handlers.ProductHandler.GetProductById)
+		r.Get("/products/search", handlers.ProductHandler.GetProductsByName)
 
 		r.Get("/categories/{id}", handlers.CategoryHandler.ListProductsByCategoryID)
 		r.Get("/categories", handlers.CategoryHandler.ListCategories)

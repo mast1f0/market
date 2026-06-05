@@ -122,3 +122,14 @@ func (s *ProductService) GetProduct(ctx context.Context, id int64) (*domain.Prod
 	}
 	return product, nil
 }
+
+func (s *ProductService) GetProductsByName(ctx context.Context, name string) ([]domain.Product, error) {
+	if name == "" {
+		return nil, ErrProductNotFound
+	}
+	products, err := s.productRepository.GetProductsByName(ctx, name)
+	if err != nil {
+		return nil, mapProductRepoError(err)
+	}
+	return products, nil
+}

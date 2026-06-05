@@ -20,4 +20,5 @@ type ProductRepository interface {
 	DeleteProduct(ctx context.Context, id int64) error
 	CreateProduct(ctx context.Context, product *domain.Product) (*domain.Product, error)
 	UpdateProduct(ctx context.Context, product *domain.Product) (*domain.Product, error)
+	GetProductsByName(ctx context.Context, name string) ([]domain.Product, error)
 }
