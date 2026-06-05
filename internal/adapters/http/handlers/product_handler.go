@@ -24,7 +24,7 @@ func (h *ProductHandler) GetAllProducts(w http.ResponseWriter, r *http.Request) 
 	ctx := r.Context()
 	products, err := h.products.GetAllProducts(ctx)
 	if err != nil {
-		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
+		helpers.RespondErr(w, err)
 		return
 	}
 	helpers.RespondJSON(w, http.StatusOK, products)
@@ -50,7 +50,7 @@ func (h *ProductHandler) AddProduct(w http.ResponseWriter, r *http.Request) {
 
 	product, err := h.products.CreateProduct(ctx, req.ToDomain(userID))
 	if err != nil {
-		helpers.RespondError(w, http.StatusBadRequest, "unable to add product")
+		helpers.RespondErr(w, err)
 		return
 	}
 
@@ -78,7 +78,7 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.products.DeleteProduct(ctx, id, userID, role); err != nil {
-		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
+		helpers.RespondErr(w, err)
 		return
 	}
 
@@ -111,7 +111,7 @@ func (h *ProductHandler) PutProduct(w http.ResponseWriter, r *http.Request) {
 
 	updated, err := h.products.UpdateProduct(ctx, req.ToDomain(userID, id), role)
 	if err != nil {
-		helpers.RespondError(w, http.StatusBadRequest, "unable to update product")
+		helpers.RespondErr(w, err)
 		return
 	}
 
@@ -124,7 +124,7 @@ func (h *ProductHandler) GetProductById(w http.ResponseWriter, r *http.Request) 
 
 	product, err := h.products.GetProductById(ctx, id)
 	if err != nil {
-		helpers.RespondError(w, http.StatusNotFound, err.Error())
+		helpers.RespondErr(w, err)
 		return
 	}
 

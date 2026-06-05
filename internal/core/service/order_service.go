@@ -15,6 +15,19 @@ var (
 	ErrEmptyCart         = errors.New("cart is empty")
 )
 
+func mapOrderRepoError(err error) error {
+	switch {
+	case errors.Is(err, ports.ErrOrderNotFound):
+		return ErrOrderNotFound
+	case errors.Is(err, ports.ErrFailedToLoadOrder):
+		return ErrFailedToLoadOrder
+	case errors.Is(err, ports.ErrFailedToSaveOrder):
+		return ErrFailedToSaveOrder
+	default:
+		return ErrFailedToSaveOrder
+	}
+}
+
 type OrderService struct {
 	orderRepo ports.OrderRepository
 	cartRepo  ports.CartRepository
@@ -90,10 +103,7 @@ func (s *OrderService) CreateFromCart(ctx context.Context, userId int64) (*domai
 	}
 	cart, err := s.cartRepo.GetCartWithItems(ctx, userId)
 	if err != nil {
-		if errors.Is(err, ports.ErrCartNotFound) {
-			return nil, ErrCartNotFound
-		}
-		return nil, ErrFailedToSaveOrder
+		return nil, mapCartRepoError(err)
 	}
 
 	if len(cart.Items) == 0 {
@@ -137,18 +147,22 @@ func (s *OrderService) CreateFromCart(ctx context.Context, userId int64) (*domai
 
 	order, err = s.orderRepo.CreateOrder(ctx, order)
 	if err != nil {
-		return nil, err
+		return nil, mapOrderRepoError(err)
 	}
 
 	err = s.orderRepo.AddOrderItems(ctx, order.ID, orderedItems)
 	if err != nil {
-		return nil, err
+		return nil, mapOrderRepoError(err)
 	}
 
 	err = s.cartRepo.ClearCart(ctx, userId)
 	if err != nil {
-		return nil, err
+		return nil, mapCartRepoError(err)
 	}
 
-	return s.orderRepo.GetOrderById(ctx, order.ID)
+	order, err = s.orderRepo.GetOrderById(ctx, order.ID)
+	if err != nil {
+		return nil, mapOrderRepoError(err)
+	}
+	return order, nil
 }

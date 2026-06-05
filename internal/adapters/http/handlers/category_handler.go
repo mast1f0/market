@@ -37,7 +37,7 @@ func (h *CategoryHandler) AddCategory(w http.ResponseWriter, r *http.Request) {
 
 	created, err := h.service.CreateCategory(ctx, strings.TrimSpace(req.Name))
 	if err != nil {
-		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
+		helpers.RespondErr(w, err)
 		return
 	}
 
@@ -50,7 +50,7 @@ func (h *CategoryHandler) GetCategory(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	category, err := h.service.GetCategory(ctx, id)
 	if err != nil {
-		helpers.RespondError(w, http.StatusNotFound, err.Error())
+		helpers.RespondErr(w, err)
 		return
 	}
 
@@ -62,7 +62,7 @@ func (h *CategoryHandler) DeleteCategory(w http.ResponseWriter, r *http.Request)
 
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err = h.service.DeleteCategory(ctx, id); err != nil {
-		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
+		helpers.RespondErr(w, err)
 		return
 	}
 
@@ -84,7 +84,7 @@ func (h *CategoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request)
 	}
 
 	if _, err := h.service.GetCategory(ctx, id); err != nil {
-		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
+		helpers.RespondErr(w, err)
 		return
 	}
 
@@ -95,7 +95,7 @@ func (h *CategoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request)
 
 	updated, err := h.service.UpdateCategory(ctx, category)
 	if err != nil {
-		helpers.RespondError(w, http.StatusBadRequest, err.Error())
+		helpers.RespondErr(w, err)
 		return
 	}
 
@@ -107,7 +107,7 @@ func (h *CategoryHandler) ListCategories(w http.ResponseWriter, r *http.Request)
 
 	categories, err := h.service.GetCategories(ctx)
 	if err != nil {
-		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
+		helpers.RespondErr(w, err)
 		return
 	}
 	helpers.RespondJSON(w, http.StatusOK, categories)
@@ -119,7 +119,7 @@ func (h *CategoryHandler) ListProductsByCategoryID(w http.ResponseWriter, r *htt
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 32)
 	products, err := h.service.GetCategoriesByCategoryID(ctx, id)
 	if err != nil {
-		helpers.RespondError(w, http.StatusNotFound, err.Error())
+		helpers.RespondErr(w, err)
 		return
 	}
 	helpers.RespondJSON(w, http.StatusOK, products)

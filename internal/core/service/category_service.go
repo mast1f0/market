@@ -46,7 +46,7 @@ func (s *CategoryService) CreateCategory(ctx context.Context, categoryName strin
 	}
 	category, err := s.repository.CreateCategory(ctx, categoryName)
 	if err != nil {
-		if errors.Is(err, ports.ErrCategoryAlreadyExists) {
+		if errors.Is(err, ports.ErrCategoryAlreadyExists) || errors.Is(err, ports.ErrCategoryExists) {
 			return nil, ErrCategoryExists
 		}
 		return nil, ErrFailedToCreateCategory

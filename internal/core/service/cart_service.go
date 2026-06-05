@@ -26,22 +26,23 @@ var (
 )
 
 func mapCartRepoError(err error) error {
-	switch err {
-
-	case ports.ErrCartNotFound:
+	switch {
+	case errors.Is(err, ports.ErrCartNotFound):
 		return ErrCartNotFound
-
-	case ports.ErrCartItemNotFound:
+	case errors.Is(err, ports.ErrCartItemNotFound):
 		return ErrCartItemNotFound
-
-	case ports.ErrFailedToLoadCart,
-		ports.ErrFailedToSaveCart,
-		ports.ErrFailedToDeleteCartItem,
-		ports.ErrFailedToUpdateCartItem,
-		ports.ErrFailedToClearCart,
-		ports.ErrFailedToLoadCartItem:
-		return ErrInternal
-
+	case errors.Is(err, ports.ErrFailedToLoadCart):
+		return ErrFailedToLoadCart
+	case errors.Is(err, ports.ErrFailedToSaveCart):
+		return ErrFailedToSaveCart
+	case errors.Is(err, ports.ErrFailedToDeleteCartItem):
+		return ErrFailedToDeleteCartItem
+	case errors.Is(err, ports.ErrFailedToUpdateCartItem):
+		return ErrFailedToUpdateCartItem
+	case errors.Is(err, ports.ErrFailedToClearCart):
+		return ErrFailedToClearCart
+	case errors.Is(err, ports.ErrFailedToLoadCartItem):
+		return ErrFailedToLoadCartItem
 	default:
 		return ErrInternal
 	}
@@ -84,7 +85,7 @@ func (s *CartService) DeleteCartItem(ctx context.Context, userId int64, productI
 	}
 	err := s.repo.DeleteCartItem(ctx, userId, productId)
 	if err != nil {
-		mapCartRepoError(err)
+		return mapCartRepoError(err)
 	}
 	return nil
 }
@@ -125,7 +126,7 @@ func (s *CartService) AddCartItem(ctx context.Context, userID int64, cartItem *d
 	}
 	product, err := s.products.GetProductById(ctx, cartItem.ProductID)
 	if err != nil {
-		return nil, err
+		return nil, mapProductRepoError(err)
 	}
 	if cartItem.PriceSnapshot <= 0 {
 		cartItem.PriceSnapshot = product.Price

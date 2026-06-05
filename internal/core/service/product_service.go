@@ -13,6 +13,23 @@ var (
 	ErrForbidden        = errors.New("forbidden")
 )
 
+func mapProductRepoError(err error) error {
+	switch {
+	case errors.Is(err, ports.ErrNotFound):
+		return ErrProductNotFound
+	case errors.Is(err, ports.ErrAlreadyExists):
+		return ErrAlreadyExists
+	case errors.Is(err, ports.ErrConflict):
+		return ErrConflict
+	case errors.Is(err, ports.ErrInvalidData):
+		return ErrInvalidData
+	case errors.Is(err, ports.ErrFailedToLoadProduct):
+		return ErrFailedToLoadProduct
+	default:
+		return ErrFailedToLoadProduct
+	}
+}
+
 type ProductService struct {
 	productRepository  ports.ProductRepository
 	categoryRepository ports.CategoryRepository
@@ -31,10 +48,7 @@ func (s *ProductService) GetProductById(ctx context.Context, id int64) (*domain.
 	}
 	product, err := s.productRepository.GetProductById(ctx, id)
 	if err != nil {
-		if errors.Is(err, ports.ErrNotFound) {
-			return nil, ErrProductNotFound
-		}
-		return nil, err
+		return nil, mapProductRepoError(err)
 	}
 	return product, nil
 }
@@ -42,29 +56,35 @@ func (s *ProductService) GetProductById(ctx context.Context, id int64) (*domain.
 func (s *ProductService) CreateProduct(ctx context.Context, product *domain.Product) (*domain.Product, error) {
 	_, err := s.categoryRepository.GetCategory(ctx, product.CategoryID)
 	if err != nil {
-		return nil, errors.New("category Not Found")
+		if errors.Is(err, ports.ErrCategoryNotFound) {
+			return nil, ErrCategoryNotFound
+		}
+		return nil, err
 	}
 	createdProduct, err := s.productRepository.CreateProduct(ctx, product)
 	if err != nil {
-		return nil, err
+		return nil, mapProductRepoError(err)
 	}
 	return createdProduct, nil
 }
 func (s *ProductService) UpdateProduct(ctx context.Context, newProduct *domain.Product, role string) (*domain.Product, error) {
 	product, err := s.productRepository.GetProductById(ctx, newProduct.ID)
 	if err != nil {
-		return nil, err
+		return nil, mapProductRepoError(err)
 	}
 	if product.OwnerID != newProduct.OwnerID && role != "admin" {
 		return nil, ErrForbidden
 	}
 	_, err = s.categoryRepository.GetCategory(ctx, newProduct.CategoryID)
 	if err != nil {
-		return nil, errors.New("category Not Found")
+		if errors.Is(err, ports.ErrCategoryNotFound) {
+			return nil, ErrCategoryNotFound
+		}
+		return nil, err
 	}
 	updatedProduct, err := s.productRepository.UpdateProduct(ctx, newProduct)
 	if err != nil {
-		return nil, err
+		return nil, mapProductRepoError(err)
 	}
 	return updatedProduct, nil
 }
@@ -75,17 +95,17 @@ func (s *ProductService) DeleteProduct(ctx context.Context, id int64, userId int
 	}
 	product, err := s.productRepository.GetProductById(ctx, id)
 	if err != nil {
-		return err
+		return mapProductRepoError(err)
 	}
 	if product.OwnerID != userId && role != "admin" {
 		return ErrForbidden
 	}
 
 	err = s.productRepository.DeleteProduct(ctx, id)
-	if errors.Is(err, ports.ErrNotFound) {
-		return ErrProductNotFound
+	if err != nil {
+		return mapProductRepoError(err)
 	}
-	return err
+	return nil
 }
 
 func (s *ProductService) GetAllProducts(ctx context.Context) ([]domain.Product, error) {
@@ -98,10 +118,7 @@ func (s *ProductService) GetProduct(ctx context.Context, id int64) (*domain.Prod
 	}
 	product, err := s.productRepository.GetProductById(ctx, id)
 	if err != nil {
-		if errors.Is(err, ports.ErrNotFound) {
-			return nil, ErrProductNotFound
-		}
-		return nil, errors.New("failed to load product")
+		return nil, mapProductRepoError(err)
 	}
 	return product, nil
 }

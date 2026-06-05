@@ -27,7 +27,7 @@ func (h *CartHandler) GetCart(w http.ResponseWriter, r *http.Request) {
 
 	cart, err := h.service.GetCartWithItems(ctx, userID)
 	if err != nil {
-		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
+		helpers.RespondErr(w, err)
 		return
 	}
 
@@ -51,7 +51,7 @@ func (h *CartHandler) AddItem(w http.ResponseWriter, r *http.Request) {
 
 	newItem, err := h.service.AddCartItem(ctx, userID, req.ToDomain())
 	if err != nil {
-		helpers.RespondError(w, http.StatusBadRequest, err.Error())
+		helpers.RespondErr(w, err)
 		return
 	}
 	helpers.RespondJSON(w, http.StatusCreated, newItem)
@@ -72,7 +72,7 @@ func (h *CartHandler) RemoveItem(w http.ResponseWriter, r *http.Request) {
 	}
 	err = h.service.DeleteCartItem(ctx, userId, item.ItemID)
 	if err != nil {
-		helpers.RespondError(w, http.StatusBadRequest, err.Error())
+		helpers.RespondErr(w, err)
 		return
 	}
 	helpers.RespondJSON(w, http.StatusOK, item)
@@ -88,7 +88,7 @@ func (h *CartHandler) UpdateItem(w http.ResponseWriter, r *http.Request) {
 	}
 	newCart, err := h.service.UpdateCartItem(ctx, req.ItemID, req.Quantity)
 	if err != nil {
-		helpers.RespondError(w, http.StatusBadRequest, err.Error())
+		helpers.RespondErr(w, err)
 		return
 	}
 	helpers.RespondJSON(w, http.StatusOK, newCart)

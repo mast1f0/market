@@ -50,7 +50,7 @@ func (h *OrderHandler) GetOrderByUser(w http.ResponseWriter, r *http.Request) {
 
 	orders, err := h.service.GetByUserId(ctx, targetUserID)
 	if err != nil {
-		helpers.RespondError(w, http.StatusBadRequest, err.Error())
+		helpers.RespondErr(w, err)
 		return
 	}
 	helpers.RespondJSON(w, http.StatusOK, orders)
@@ -71,7 +71,7 @@ func (h *OrderHandler) GetOrderById(w http.ResponseWriter, r *http.Request) {
 	}
 	order, err := h.service.GetOrderById(ctx, id)
 	if err != nil {
-		helpers.RespondError(w, http.StatusNotFound, err.Error())
+		helpers.RespondErr(w, err)
 		return
 	}
 	if order.UserID != userID {
@@ -94,7 +94,7 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	}
 	order, err := h.service.CreateFromCart(ctx, userID)
 	if err != nil {
-		helpers.RespondError(w, http.StatusBadRequest, err.Error())
+		helpers.RespondErr(w, err)
 		return
 	}
 	helpers.RespondJSON(w, http.StatusCreated, order)
@@ -126,7 +126,7 @@ func (h *OrderHandler) UpdateOrder(w http.ResponseWriter, r *http.Request) {
 	}
 	err = h.service.UpdateStatus(ctx, id, req.Status, userID, role)
 	if err != nil {
-		helpers.RespondError(w, http.StatusInternalServerError, err.Error())
+		helpers.RespondErr(w, err)
 		return
 	}
 	helpers.RespondJSON(w, http.StatusOK, map[string]string{
