@@ -1,8 +1,23 @@
 package logger
 
-import log "github.com/sirupsen/logrus"
+import (
+	"log/slog"
+	"os"
 
-func Init() {
-	log.SetFormatter(&log.TextFormatter{})
-	log.SetLevel(log.DebugLevel)
+	"github.com/lmittmann/tint"
+)
+
+type Logger struct {
+	*slog.Logger
+}
+
+func NewLogger() *Logger {
+	handler := tint.NewHandler(os.Stdout, &tint.Options{
+		Level:      slog.LevelDebug,
+		TimeFormat: "15:04:05",
+	})
+
+	log := slog.New(handler)
+
+	return &Logger{log}
 }

@@ -18,7 +18,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}
-	logger.Init()
+	logger := logger.NewLogger()
 	seedFlag := flag.Bool("seed", false, "run seed")
 	flag.Parse()
 
@@ -44,7 +44,7 @@ func main() {
 	orderHanler := handlers.NewOrderHandler(orderService)
 
 	jwt := jwtutil.Manager{Secret: []byte(cfg.JWT_SECRET)}
-	router := http2.SetupRoutes(productHandler, categoryHandler, cartHandler, orderHanler, &jwt)
+	router := http2.SetupRoutes(productHandler, categoryHandler, cartHandler, orderHanler, &jwt, logger)
 	srv := http2.NewServer(router)
 	srv.Start()
 }

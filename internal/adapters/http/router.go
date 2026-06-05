@@ -4,12 +4,13 @@ import (
 	"market/internal/adapters/http/handlers"
 	"market/internal/adapters/http/middleware"
 	jwtutil "market/internal/adapters/jwt"
+	"market/internal/engine/logger"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 )
 
-func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handlers.CategoryHandler, cartHandler *handlers.CartHandler, orderHandler *handlers.OrderHandler, jwt *jwtutil.Manager) *chi.Mux { //, CategoryHandler *handlers.CategoryHandler
+func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handlers.CategoryHandler, cartHandler *handlers.CartHandler, orderHandler *handlers.OrderHandler, jwt *jwtutil.Manager, logger *logger.Logger) *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Use(cors.Handler(cors.Options{
@@ -18,7 +19,7 @@ func SetupRoutes(productHandler *handlers.ProductHandler, categoryHandler *handl
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
 		AllowCredentials: false,
 	}))
-
+	r.Use(middleware.LoggingMiddleware(logger))
 	//не требует авторизации
 	r.Group(func(r chi.Router) {
 		r.Get("/products", productHandler.GetAllProducts)
